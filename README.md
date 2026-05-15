@@ -23,7 +23,7 @@ Template for Quarkus applications.
 Hexagonal Architecture / DDD package layout.
 
 ```
-org.examople.<bounded-context>
+org.example.<bounded-context>
  ├── application                    # Application orchestration layer
  │   ├── port                       # Outbound ports (notifications, external services)
  │   └── usecase                    # Use cases exposed to adapters
