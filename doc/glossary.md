@@ -450,13 +450,24 @@
 ### Anti-Patterns
 
 - **Anemic Domain Model** A domain model containing only data with no business behavior.
-  - Business logic leaks into services or controllers.
+  - Business logic leaks out of the domain into application services, weakening invariants and core domain ownership.
+  - Use case handlers accumulate procedural logic, validation, branching, and orchestration,
+    effectively creating a “service layer monolith” that bypasses domain modeling (Transaction Script).
   - Generally discouraged in DDD.
 
 - **God Service** An oversized service accumulating unrelated responsibilities.
   - Indicates weak boundaries and low cohesion.
 
 - **Big Ball of Mud** A system with no clear architectural structure.
+  - Framework or persistence concerns leak into domain or application layers.
+  - Repositories evolve into generic query services instead of aggregate-focused persistence gateways.
+  - Command and query responsibilities mix, breaking read/write separation assumptions.
+  - Cross-context imports introduce hidden coupling and reduce modular independence.
+  - The shared module expands beyond primitives and silently couples bounded contexts.
+  - Mapping logic starts containing transformation rules, conditional enrichment, 
+    or decisions that should belong in domain policies or factories.
+  - Excessive subpackages reduce cohesion and increase cognitive overhead without real benefit.
+  - Heavy integration/e2e reliance replaces fast, focused unit and domain-level testing.
   - High coupling and poor maintainability.
 
 - **Shared Database Anti-Pattern** Multiple services directly sharing the same database schema.
@@ -475,6 +486,7 @@
   - Produces weak domain boundaries.
 
 - **Smart Controller / Thin Domain** Business logic placed in controllers or application services instead of domain model.
+  - Use case handlers accumulate procedural logic and become hidden monoliths.
   - Weakens domain encapsulation.
 
 - **Over-Mocking** Excessive reliance on mocks in tests.
@@ -493,6 +505,10 @@
   - Adds complexity without measurable benefit.
 
 - **Technical Debt** The long-term cost of short-term implementation compromises.
+  - Cross-context imports occur for convenience, leading to implicit coupling and making 
+    eventual service extraction difficult.
+  - Over-reliance on integration/e2e tests due to weak domain/unit design, resulting in slow 
+    feedback loops and fragile test suites.
 
 ## Testing
 
