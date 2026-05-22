@@ -30,6 +30,7 @@
         <maven-pmd-plugin.version>3.28.0</maven-pmd-plugin.version>
         <spotless-maven-plugin.version>3.4.0</spotless-maven-plugin.version>
         <spotbugs-maven-plugin.version>4.9.8.3</spotbugs-maven-plugin.version>
+        <maven-javadoc-plugin.version>3.11.2</maven-javadoc-plugin.version>
         <docker-maven-plugin.version>0.48.1</docker-maven-plugin.version>
     </properties>
 
@@ -320,6 +321,19 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>${maven-javadoc-plugin.version}</version>
+                <configuration>
+                    <source>${maven.compiler.release}</source>
+                    <doclint>all,-missing</doclint>
+                    <failOnError>true</failOnError>
+                    <failOnWarnings>false</failOnWarnings>
+                    <quiet>true</quiet>
+                </configuration>
             </plugin>
 
             <plugin>

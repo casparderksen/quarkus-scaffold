@@ -14,7 +14,7 @@ Template for Quarkus applications.
 - Testing (unit): JUnit 5 + AssertJ + Mockito
 - Testing (integration): QuarkusTest + Testcontainers
 - Testing (contract): REST Assured + OpenAPI contract validation + Pact
-- Testing (e2e): Black-box tests via REST Assured + Playwright (if UI exists) + Cucumber (BDD feature specs)
+- Testing (e2e): Black-box tests via REST Assured + Cucumber (BDD feature specs) + Playwright (if UI exists)
 - Messaging: Apache Kafka (via SmallRye Reactive Messaging)
 - Observability: Micrometer metrics, OpenTelemetry tracing, structured JSON logging, correlation IDs
 - API documentation: SmallRye OpenAPI (`/q/openapi`), Swagger UI (`/q/swagger-ui`)
@@ -24,19 +24,50 @@ Template for Quarkus applications.
 
 ## Architecture
 
-### Package structure
+### Design principles
 
 The application is structured according to Hexagonal / DDD / Clean Architecture concepts.
 - DDD strategic design: bounded contexts, aggregates, repositories
 - Hexagonal architecture: ports and adapters
-- Clean architecture: use cases, dependency flow and infrastructure isolation
+- Clean architecture: use cases, dependency flow, and infrastructure isolation
 - CQRS-lite separation (command/query): use for read-heavy UI pages and reports
 
-The structure allows (eventual) extraction of services from a modulith, 
-and sharing cross-cuttings concerns between teams (DDD kernel and infrastructure).
+The structure enables (eventual) extraction of Maven modules or independent services from a modular monolith.
+It also supports sharing cross-cutting concerns (shared kernel, infrastructure) across teams.
 
 See [Glossary](doc/glossary.md) for an exlanation of concepts and see [Testing Strategy](doc/testing-strategy.md)
 for testing guidelines supported by this template.
+
+### Guidelines for use
+
+Use this architecture when the system has non-trivial domain rules.
+It can be relaxed for CRUD-heavy service, prototypes, or small and stable domains.
+
+#### Mandatory baseline
+
+- Use bounded-context packages to prevent cross-domain coupling.
+- Keep aggregates as the consistency boundary; enforce invariants inside them.
+- Separation of `domain`, `application`, `infrastructure`, dependencies outside-in.
+- Application layer only orchestrates and owns transactions, not core business rules.
+- Define ports explicitly for all external dependencies (DB, messaging, external APIs, SDKs).
+- Keep shared kernel minimal and stable.
+
+#### What can be relaxed
+
+- CQRS separation (command/query split) can be skipped for simple CRUD domains.
+- Specification/policy/factory packages can be merged into domain service in small domains.
+- DTO sub-packaging (request/response/projection) can be flattened or included in use cases.
+- Dedicated `mapper` package can be inlined in use cases.
+- Dedicated `validation` package can be inline in use cases or excluded if bean validation is enough.
+- Test slicing (unit/integration/contract separation) can be simplified in early phases.
+- Shared kernel can be ignored entirely in single bounded context systems.
+
+### Coding agents
+
+[CLAUDE.md](CLAUDE.md) (or `AGENTS.md`) is not documentation; it specified constraints for preventing structurally 
+plausible but architecturally invalid code. Everything obvious or inferable from the codebase should be left out.
+
+### Package structure
 
 **Main package structure (`src/main/java`):**
 ```
@@ -146,11 +177,12 @@ resources
 
 ### Pragmatic Exception: JPA in the Domain Model
 
-Allowing JPA in the domain is a pragmatic exception to strict Hexagonal/Clean/DDD rules because it preserves 
-Hibernate optimizations. With managed entities, Hibernate performs dirty checking and batched updates without 
-extra SELECTs or explicit merge logic. Separating domain and persistence models can unintentionally force extra 
-database roundtrips when re-attaching detached objects and introduces mapping overhead, while gaining relatively 
-little in return for most CRUD-heavy systems.
+The domain model should be framer-free and agnostic of persistence technology.
+Allowing JPA in the domain is a pragmatic exception to this rule because it preserves 
+Hibernate optimizations. With managed entities, Hibernate can perform dirty checking and batched updates without 
+extra SELECTs or explicit merge logic. Separating domain and persistence models can introduce extra 
+database roundtrips when re-attaching detached objects and requires maintenance of additional mappings, 
+while gaining relatively little for CRUD-heavy systems.
 
 Use queries and projections when you don’t need aggregate behavior or transactional consistency at the domain level,
 typically for read-heavy use cases like lists, search, and reporting. In those cases, bypass entities entirely and 
@@ -161,14 +193,12 @@ entity hydration. Command paths use entities; query paths use projections.
 
 All dependencies must follow a strict outside-in direction:
 - `domain` must not depend on `application` or `infrastructure`
-
 - `application` may depend only on `domain`
 - `application` must not depend on `infrastructure`
-- `application.usecase` depends only on `domain` and `application.port`.
-
+- `application.service` depends only on `domain` and `application.port`
 - `infrastructure` may depend on `application` and `domain`
-- `infrastructure.adapter.in` depends only on `application.port.in`.
-- `infrastructure.adapter.out` depends only on `application.port.out` and `domain`.
+- `infrastructure.adapter.in` depends only on `application.port.in`
+- `infrastructure.adapter.out` depends only on `application.port.out` and `domain`
 
 ### Naming convention
 
@@ -217,6 +247,7 @@ All dependencies must follow a strict outside-in direction:
 
 # TODO
 
+- Contact test http error code (500)
 - Testcontainers 
 - ArchUnit
 - Jaccoco code coverage
@@ -226,10 +257,15 @@ All dependencies must follow a strict outside-in direction:
 - Example code
 - Example tests
 
+## AI Disclosure
+
+This project uses artificial intelligence tools for research, coding, or documentation. 
+All final content was reviewed, edited, and validated by the human author before publication.
+
 ## See also
 
 - [Clean Architecture](https://8thlight.com/blog/uncle-bob/2012/08/13/the-clean-architecture.html)
-- [Hexagonal Architecture](https://herbertograca.com/2017/11/16/explicit-architecture-01-ddd-hexagonal-onion-clean-cqrs-how-i-put-it-all-together/)
+- [Putting toghether DDD, Hexagonal, Onion, Clean, CQRS](https://herbertograca.com/2017/11/16/explicit-architecture-01-ddd-hexagonal-onion-clean-cqrs-how-i-put-it-all-together/)
 - [CQRS](https://martinfowler.com/bliki/CQRS.html)
 - [Another Quarkus scaffold](https://github.com/andredesousa/advanced-quarkus-scaffold/tree/main)
 - [Quarkus best practices](https://github.com/andredesousa/quarkus-best-practices)
