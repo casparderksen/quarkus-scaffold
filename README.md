@@ -247,10 +247,11 @@ All dependencies must follow a strict outside-in direction:
 
 # TODO
 
+- Naming convention for test classes and methods
 - Contact test http error code (500)
 - Testcontainers 
 - ArchUnit
-- Jaccoco code coverage
+- Jaccoco code coverage 
 - Owasp dependency check
 - ErrorProne
 - OIDC security
