@@ -1,687 +1,1088 @@
 # Glossary
 
-## Architecture Glossary
+Each entry uses a fixed shape:
 
-### Architectural quality concepts
+- **Definition** — one line.
+- **Why** — what problem the concept solves.
+- **When** — when to reach for it.
+- **Example** — concrete instance (where useful).
+- **Contrast** — adjacent concepts and how they differ.
+- **See also** — related entries.
 
-- **Separation of Concerns** Division of responsibilities into distinct components or layers.
-  - Reduces coupling and complexity.
+Slots are omitted when not applicable. Terms are defined once; duplicates redirect via `See [[X]]`.
 
-- **Coupling** The degree of interdependency between components or modules.
-  - Lower coupling improves maintainability, testability, and reusability, and reduces ripple effect of changes.
-  - Low coupling is achieved through information hiding, interfaces, and dependency inversion.
+---
 
-- **Cohesion** The degree to which responsibilities within a component belong together.
-  - High cohesion improves clarity, maintainability, testability, and reusability.
-  - Achieved through encapsulation and Single Responsibility Principle (SRP).
+## Architectural quality
 
-- **Encapsulation** The practice of bundling of data and behavior together into a single cohesive unit.
-  - Enforces information hiding and separation of concerns.
-  - Helps maintain a clean interface and reduce coupling.
-  - Common in object-oriented programming.
+### Separation of Concerns
+Division of responsibilities into distinct components or layers.
 
-- **Information Hiding** The practice of hiding internal implementation details and data from the outside world.
-  - Helps maintain a clean interface and reduce coupling.
+- **Why** Reduces coupling and complexity; isolates change.
+- **See also** [[Coupling]], [[Cohesion]], [[Single Responsibility Principle]]
 
-- **Dependency Inversion** A principle where high-level business logic depends on abstractions rather than implementations.
-  - Central to hexagonal architecture.
+### Coupling
+Degree of interdependence between components.
 
-- **Single Responsibility Principle (SRP)** A principle that states that a unit should have only one reason to change.
-  - Enforces loose coupling and separation of concerns.
-  - Helps maintain a clean and maintainable codebase.
-  - Achieved through encapsulation and information hiding.
+- **Why** Lower coupling improves maintainability, testability, reusability; limits ripple effect of changes.
+- **How** Achieved via information hiding, interfaces, dependency inversion.
+- **See also** [[Cohesion]], [[Dependency Inversion]], [[Information Hiding]]
+
+### Cohesion
+Degree to which responsibilities within a component belong together.
+
+- **Why** High cohesion improves clarity, maintainability, testability, reusability.
+- **How** Achieved via encapsulation and SRP.
+- **See also** [[Single Responsibility Principle]], [[Encapsulation]]
+
+### Encapsulation
+Bundling data and behavior into one cohesive unit.
+
+- **Why** Enforces information hiding and separation of concerns.
+- **See also** [[Information Hiding]], [[Cohesion]]
+
+### Information Hiding
+Hiding internal implementation details from the outside world.
+
+- **Why** Keeps interfaces clean; reduces coupling.
+- **See also** [[Encapsulation]], [[Leaky Abstraction]]
+
+### Dependency Inversion
+High-level logic depends on abstractions, not implementations.
+
+- **Why** Central to hexagonal architecture; lets domain be tested and re-targeted without touching infrastructure.
+- **Example** Application defines `OrderRepository` interface; JPA adapter implements it.
+- **See also** [[Hexagonal Architecture]], [[Port]], [[Dependency Direction]]
+
+### Single Responsibility Principle (SRP)
+A unit has only one reason to change.
+
+- **Why** Enforces loose coupling and separation of concerns.
+- **See also** [[Cohesion]], [[Encapsulation]]
+
+### Dependency Direction
+Rule governing allowed compile-time dependencies.
+
+- **Why** Prevents domain or application from depending on transport/persistence concerns.
+- **Rule** Outside-in only: `infrastructure → application → domain`. Never reverse.
+- **See also** [[Clean Architecture]], [[Outside-in Rule]]
+
+### Outside-in Rule
+Dependencies point inward toward the domain core.
+
+- **Why** Keeps inner layers framework-free and stable.
+- **Example** REST adapter depends on application port; application port does not know REST exists.
+- **See also** [[Dependency Direction]], [[Clean Architecture]], [[Hexagonal Architecture]]
+
+---
+
+## Layered architecture
 
 ### Layered Architecture
+Architecture separating concerns into logical layers (domain, application, infrastructure).
 
-- **Layered Architecture** An architecture separating concerns into logical layers.
-  - Common layers: domain, application, infrastructure.
-  - Dependencies flow inward toward business logic.
+- **Why** Predictable structure; supports outside-in dependency rule.
+- **See also** [[Hexagonal Architecture]], [[Clean Architecture]]
 
-- **Domain Layer** The core business layer containing domain logic and business rules.
-  - Independent of frameworks and infrastructure.
-  - Contains aggregates, entities, value objects, and domain services.
+### Domain Layer
+Core business layer containing domain logic and rules.
 
-- **Application Layer** The orchestration layer coordinating use cases and domain interactions.
-  - Contains no core business rules.
-  - Manages transactions and workflow execution.
+- **Why** Independent of frameworks and infrastructure; stable across technology changes.
+- **Contents** Aggregates, entities, value objects, domain services, policies, repositories (interfaces), domain events, domain exceptions.
+- **See also** [[Application Layer]], [[Infrastructure Layer]], [[Domain-Driven Design]]
 
-- **Infrastructure Layer** The technical implementation layer integrating frameworks and external systems.
-  - Contains adapters and configuration.
-  - Depends on application and domain layers.
+### Application Layer
+Orchestration layer coordinating use cases and external dependencies.
 
-### Hexagonal Architecture Concepts
+- **Why** Owns transactions and workflow; keeps domain free of orchestration noise.
+- **Rule** No core business rules; pure coordination.
+- **Contents** Command/query contracts, handlers, outbound ports, projection DTOs.
+- **See also** [[Use Case]], [[Handler]], [[Transaction Boundary]]
 
-- **Hexagonal Architecture** An architectural style isolating business logic from external systems through ports and adapters.
-  - Also called Ports and Adapters architecture.
-  - Separates application core from infrastructure concerns.
-  - Enables easier testing and technology replacement.
+### Infrastructure Layer
+Technical implementation layer integrating frameworks and external systems.
 
-- **Port** An abstraction defining communication with the application core.
-  - Separates core logic from technical implementation.
+- **Contents** Adapters (REST, Kafka, JPA, scheduler), configuration.
+- **Rule** Depends on application and domain; never the reverse.
+- **See also** [[Adapter]], [[Outside-in Rule]]
 
-- **Inbound Port** A contract exposing application capabilities to external actors.
-  - Represents use case interfaces.
+---
 
-- **Outbound Port** A contract describing dependencies required by the application core.
-  - Examples: repositories, HTTP clients, messaging publishers.
+## Hexagonal architecture
 
-- **Adapter** An implementation connecting ports to external systems.
-  - Converts between external and internal representations.
+### Hexagonal Architecture
+Architectural style isolating business logic from external systems via ports and adapters.
 
-- **Inbound Adapter** An adapter driving the application.
-  - Examples: REST controllers, Kafka consumers, schedulers.
+- **Also called** Ports and Adapters.
+- **Why** Enables testing the core without infrastructure; lets technologies be swapped behind stable ports.
+- **See also** [[Port]], [[Adapter]], [[Dependency Inversion]]
 
-- **Outbound Adapter** An adapter implementing outbound dependencies.
-  - Examples: repositories, Kafka producers, REST clients.
+### Port
+Abstraction defining communication with the application core.
 
-- **Driving Adapter** Another term for inbound adapter.
-  - Initiates interaction with the application.
+- **Why** Separates core logic from technical implementation.
+- **Contrast** [[Inbound Port]] = what the application offers; [[Outbound Port]] = what the application needs.
 
-- **Driven Adapter** Another term for outbound adapter.
-  - Invoked by the application core.
+### Inbound Port
+Contract exposing application capabilities to external actors.
 
-- **Application Core** The business-centric part of the system isolated from infrastructure concerns.
-  - Typically, contains domain and application layers.
+- **Example** `CreateOrderHandler` interface invoked by REST resource.
+- **Contrast** Outbound port describes a dependency; inbound describes a capability.
+- **See also** [[Use Case]], [[Command]], [[Query]]
 
-- **Dependency Inversion** A principle where high-level business logic depends on abstractions rather than implementations.
-  - Central to hexagonal architecture.
+### Outbound Port
+Contract describing a dependency required by the application core.
 
-- **Boundary** A separation point between architectural responsibilities.
-  - Often enforced through ports and package structure.
+- **Categories** Persistence (`OrderRepository`), messaging (`OrderEventPublisher`), client (`PaymentServiceClient`), query (`OrderHistoryQueryPort`), cache (`OrderCacheRepository`).
+- **See also** [[Adapter]], [[Dependency Inversion]]
 
-#### Adapter Types
+### Adapter
+Implementation connecting a port to an external system.
 
-- **Infrastructure Adapter** Infrastructure component implementing integration with external systems.
+- **Why** Converts between external representation and internal model.
+- **Contrast** [[Inbound Adapter]] drives the application; [[Outbound Adapter]] is driven by it.
 
-- **Persistence Adapter** Infrastructure adapter implementing persistent storage.
-  - Handles database interaction and ORM mapping.
+### Inbound Adapter
+Adapter driving the application (also: driving adapter).
 
-- **Messaging Adapter** Infrastructure adapter integrating asynchronous messaging systems.
-  - Examples: Kafka and RabbitMQ producers and consumers.
+- **Examples** REST controllers, Kafka consumers, scheduled jobs.
+- **Rule** Entrypoint only; no domain logic, no transaction boundary.
+- **See also** [[Driving Adapter]]
 
-- **Client Adapter** Infrastructure adapter integrating external services.
-  - Examples: REST, gRPC, SOAP clients.
+### Outbound Adapter
+Adapter implementing an outbound port (also: driven adapter).
 
-- **Cache Adapter** Infrastructure adapter integration with caching systems.
-  - Examples: Redis, Memcached.
+- **Examples** JPA repository, Kafka producer, REST client, Redis cache.
+- **See also** [[Driven Adapter]]
 
-### Domain-Driven Design (DDD) Concepts
+### Driving Adapter
+See [[Inbound Adapter]].
 
-- **Domain-Driven Design (DDD)** An approach to software design centered around business domains and domain models.
-  - Focuses on modeling business concepts explicitly.
-  - Encourages collaboration with domain experts.
-  - Encourages bounded contexts and ubiquitous language.
+### Driven Adapter
+See [[Outbound Adapter]].
 
-- **Bounded Context** A logical boundary within which a domain model is consistent and meaningful.
-  - Defines ownership of terminology and rules.
-  - Reduces coupling between business domains.
+### Application Core
+Business-centric part of the system isolated from infrastructure.
 
-- **Ubiquitous Language** A shared language between developers and domain experts.
-  - Reflected directly in code and architecture.
-  - Reduces translation ambiguity.
+- **Contents** Domain and application layers.
+- **See also** [[Hexagonal Architecture]]
 
-- **Domain Layer** The core business layer containing domain logic and business rules.
-  - Independent from frameworks and infrastructure.
-  - Contains aggregates, entities, value objects, and domain services.
+### Boundary
+Separation point between architectural responsibilities.
 
-- **Aggregate** A consistency boundary grouping related domain objects (entities and value objects).
-  - Treated as a single, cohesive unit for data changes.
-  - Enforces invariants and transactional consistency.
-  - Accessed through a single aggregate root.
-  - Example: `Order` ensuring it cannot transition to `Shipped` unless it is `Paid`.
+- **How** Enforced through ports, package structure, ArchUnit tests.
 
-- **Aggregate Root** The primary entity controlling access to an aggregate.
-  - External code interacts only through the root.
-  - Responsible for maintaining invariants.
-  - Example: `Order` aggregating `OrderLine` items.
+### Persistence Adapter
+Outbound adapter implementing persistent storage.
 
-- **Entity** A domain object defined primarily by identity.
-  - Identity persists across state changes.
-  - Usually mutable.
+- **Example** `OrderJpaRepositoryAdapter` implements `OrderRepository`.
 
-- **Value Object** A domain object defined only by values.
-  - Immutable by design.
-  - Has no identity.
+### Messaging Adapter
+Outbound or inbound adapter integrating asynchronous messaging.
 
-- **Domain Event** A representation of something meaningful that happened in the domain.
-  - Captures business-significant state changes.
-  - Used for decoupling and integration.
+- **Examples** Kafka producer/consumer.
 
-- **Domain Service** Domain logic that does not naturally belong to a single aggregate.
-  - Contains business behavior spanning multiple aggregates.
-  - Should remain business-focused and stateless where possible.
+### Client Adapter
+Outbound adapter integrating external services over the wire.
 
-- **Repository** An abstraction for loading and persisting aggregates.
-  - Hides persistence details from the domain.
-  - Works with aggregates, not database tables.
+- **Examples** REST, gRPC, SOAP clients.
 
-- **Specification** A reusable business predicate expressing selection or validation rules.
-  - Often used for filtering and eligibility logic.
-  - Encapsulates boolean business rules.
-  - Example: `EligibleForFreeShippingSpec` returns `true` if `order.total > 50`.
+### Cache Adapter
+Outbound adapter integrating caching systems.
 
-- **Policy** A business decision rule or strategy.
-  - Encapsulates business decisions and computations.
-  - Often stateless and reusable.
-  - Example: `ShippingCostPolicy` computes shipping fee based on order weight, destination, and carrier rules.
+- **Examples** Redis, Caffeine.
 
-- **Factory (Domain Factory)** A component responsible for creating complex aggregates or entities.
-  - Encapsulates creation invariants.
-  - Prevents invalid object creation.
+---
 
-- **Invariant** A business rule that must always remain true within an aggregate boundary.
-  - Enforced by aggregates and domain logic.
+## Domain-Driven Design
 
-- **Shared Kernel** A small explicitly shared subset of a domain model between bounded contexts.
-  - Requires strong coordination between teams.
+### Domain-Driven Design (DDD)
+Approach to design centered on business domains and explicit domain models.
 
-- **Anti-Corruption Layer (ACL)** A translation layer protecting one bounded context from another model.
-  - Prevents leakage of external concepts.
+- **Why** Aligns code with business reality; reduces translation loss between experts and engineers.
+- **Pillars** Bounded contexts, ubiquitous language, aggregates, repositories.
 
-- **Context Map** A high-level representation of relationships between bounded contexts.
-  - Documents integration patterns and ownership boundaries.
+### Bounded Context
+Logical boundary within which a domain model is consistent and meaningful.
 
-### Clean Architecture Concepts
+- **Why** Same word (e.g., "Customer") means different things in Sales vs Billing; explicit boundaries prevent silent coupling.
+- **Example** `order` context owns `Order`, `OrderLine`; `customer` context owns `CustomerProfile`.
+- **Rule** No cross-context imports except via shared kernel primitives.
+- **See also** [[Context Map]], [[Shared Kernel]], [[Anti-Corruption Layer]]
 
-- **Clean Architecture** An architectural style organizing code around dependency direction toward business rules.
-    - Domain logic is isolated from infrastructure concerns.
-    - Inner layers must not depend on outer layers.
-    - Encourages loose coupling and separation of concerns.
-  
-- **Use Case** A business operation exposed by the application layer.
-  - Represents an application capability.
-  - Coordinates domain behavior and ports (external interfaces).
+### Ubiquitous Language
+Shared language between developers and domain experts, reflected in code.
 
-- **Application Layer** The orchestration layer coordinating workflows and transactions.
-  - Contains no core business rules.
+- **Why** Reduces translation ambiguity; class and method names match conversation.
 
-- **DTO (Data Transfer Object)** A structure used to transfer data between layers or systems.
-  - Prevents leaking domain models externally.
-  - Usually serialization-friendly.
+### Aggregate
+Consistency boundary grouping entities and value objects mutated as a single unit.
 
-- **Mapper** A component translating between DTOs and domain models.
-  - Keeps transformation logic centralized.
+- **Why** Enforces invariants atomically; defines transaction scope (one aggregate per transaction).
+- **When** Domain has rules spanning multiple objects that must hold together.
+- **Example** `Order` rejects transition to `Shipped` unless state is `Paid`.
+- **Rules** External access only through the root. References between aggregates by ID, never object reference. Children have no repository. Aggregate holds only invariant-bearing data; display-only fields go to projections.
+- **Contrast** Entity = identity, no consistency role. Value Object = no identity, immutable.
+- **See also** [[Aggregate Root]], [[Invariant]], [[Consistency Boundary]], [[Repository]]
 
-- **Transaction Boundary** The scope within which changes are committed atomically.
-  - Usually managed in application layer use cases.
+### Aggregate Root
+Primary entity controlling access to an aggregate.
 
-- **Validation** Verification that incoming data satisfies structural or business requirements.
-  - Often performed at application or API boundaries.
-  - Input validation belongs outside domain invariants.
+- **Why** Single entrypoint guarantees invariants are enforced on every mutation.
+- **Example** `Order` aggregates `OrderLine` items; external code never touches `OrderLine` directly.
+- **See also** [[Aggregate]]
 
-- **Separation of Concerns** Division of responsibilities into distinct components or layers.
-  - Reduces coupling and complexity.
+### Consistency Boundary
+Scope within which invariants must hold atomically.
 
-- **Coupling** The degree of dependency between components.
-  - Lower coupling improves maintainability.
+- **Why** Matches the aggregate; defines transaction scope.
+- **Rule** Cross-aggregate consistency is eventual, via domain events.
+- **See also** [[Aggregate]], [[Eventual Consistency]]
 
-- **Cohesion** The degree to which responsibilities within a component belong together.
-  - High cohesion improves clarity.
+### Entity
+Domain object defined primarily by identity.
 
-- **Dependency Direction** The rule governing allowed compile-time dependencies.
-  - Dependencies should point toward business logic.
+- **Why** Identity persists across state changes.
+- **Example** `Customer` with stable `CustomerId`.
+- **Contrast** [[Value Object]] has no identity.
 
-- **Configuration Mapping** Binding configuration values into typed application objects.
-  - Keeps configuration centralized and type-safe.
+### Value Object
+Immutable domain object defined only by values.
 
-### Microservices & Distributed Systems Patterns
+- **Why** No identity, freely shareable, free from aliasing bugs.
+- **Example** `Money(amount, currency)`, `OrderId`.
+- **Contrast** [[Entity]] has identity.
 
-- **Event-Driven Architecture** An architecture centered around publishing and reacting to events.
-  - Encourages loose coupling and asynchronous workflows.
-  - Commonly implemented as a microservice architecture.
+### Domain Event
+Representation of something meaningful that happened in the domain.
 
-- **Microservices** An architectural pattern that organizes an application into a collection of loosely coupled, fine-grained services
-  - Commonly implemented as containers.
-  - Services communicate through APIs and message brokers.
-  
-#### Consistency Patterns
+- **Why** Captures business-significant state changes; decouples emitters from reactors.
+- **Example** `OrderPlacedEvent(orderId, customerId, total)`.
+- **Rule** Emitted from aggregates, not from application layer. Internal type, unversioned; external publication goes through messaging adapter that maps to versioned event.
+- **See also** [[Integration Event]], [[Transactional Outbox]]
 
-- **Saga Pattern** A distributed transaction pattern coordinating multiple local transactions through events or commands.
-  - Used instead of distributed ACID transactions.
-  - Can be orchestration-based or choreography-based.
+### Domain Service
+Domain logic that does not naturally belong to a single aggregate.
 
-- **Transactional Outbox** A reliability pattern ensuring DB writes and event publishing occur atomically.
-  - Prevents lost or duplicated events.
-  - Common in event-driven systems.
+- **Why** Captures cross-aggregate behavior without forcing a god-aggregate.
+- **Example** `PricingService` computes price across customer segment, order, and current promotions.
+- **Contrast** [[Policy]] = stateless decision/computation. [[Domain Service]] = coordination across aggregates.
 
-- **Idempotent Consumer** A consumer that safely processes duplicate messages without changing the outcome.
-  - Critical in at-least-once delivery systems.
+### Repository
+Abstraction for loading and persisting aggregates.
 
-- **Idempotency** The property allowing repeated execution without changing the outcome.
-  - Critical for distributed messaging systems.
+- **Why** Hides persistence details from the domain.
+- **Rules** Exists only for aggregate roots, never for child entities. Exposes aggregate-shaped operations (`save`, `delete`, `findById`, business-key lookups). Does not return projection DTOs. Does not take query-shape parameters (filters, sorts, pagination for display).
+- **Contrast** [[Query Port]] handles list/search/report shapes that don't match the aggregate.
+- **See also** [[Aggregate]], [[Query Port]]
 
-- **Eventual Consistency** A consistency model where distributed state converges asynchronously over time.
-  - Common in microservice systems.
+### Specification
+Reusable business predicate expressing selection or validation rules.
 
-#### Reliability & Resilience Patters
+- **Why** Encapsulates a boolean rule so it can be reused across queries and validation.
+- **Example** `EligibleForFreeShippingSpec.isSatisfiedBy(order) → boolean`.
+- **Contrast** [[Policy]] returns a decision or value; Specification returns boolean.
 
-- **Dead Letter Queue (DLQ)** A queue storing messages that cannot be processed successfully.
-  - Prevents poison messages from blocking processing.
+### Policy
+Stateless business decision or computation rule.
 
-- **Retry Policy** A strategy controlling repeated execution after transient failures.
-  - Often includes backoff and retry limits.
+- **Why** Isolates "how we decide X" from aggregate state; survives independently of aggregate evolution.
+- **Example** `ShippingCostPolicy.compute(weight, destination, carrier) → Money`.
+- **Contrast** [[Specification]] returns boolean. [[Domain Service]] coordinates multiple aggregates; Policy decides.
 
-- **Circuit Breaker** A resilience mechanism preventing repeated calls to failing dependencies.
-  - Helps avoid cascading failures.
+### Factory (Domain Factory)
+Component creating complex aggregates or entities.
 
-- **Bulkhead Pattern** An isolation strategy limiting failure impact between components.
-  - Prevents resource exhaustion from spreading.
+- **Why** Encapsulates creation invariants; prevents invalid construction.
+- **Example** `Order.create(customerId, lines, ...)` static factory on the aggregate.
+- **See also** [[Aggregate Root]]
 
-- **Timeout Pattern** A strategy controlling the duration of a request before it is considered failed.
-  - Helps avoid long-running requests.
-  - Common in asynchronous systems.
+### Invariant
+Business rule that must always hold within an aggregate boundary.
 
-- **Load Balancing** A strategy distributing incoming requests across multiple services.
-  - Improves overall throughput and availability.
+- **Example** "Order total equals sum of line totals after discounts."
+- **Enforced** Inside aggregate constructors and methods.
 
-#### CQRS Concepts
+### Shared Kernel
+Small, explicitly shared subset of a domain model between bounded contexts.
 
-- **CQRS (Command Query Responsibility Segregation)** Separation of write operations and read operations.
-  - Commands modify state.
-  - Queries retrieve optimized projections.
+- **Why** Allows reuse of stable primitives (IDs, Money, base types) without coupling business behavior.
+- **Rule** Keep minimal; require strong coordination to change.
+- **Contrast** [[Anti-Corruption Layer]] isolates rather than shares.
 
-- **Command** A request that changes system state.
-  - Typically handled by command use cases.
+### Anti-Corruption Layer (ACL)
+Translation layer protecting a bounded context from another model.
 
-- **Query** A request retrieving data without modifying state.
-  - Typically optimized for reads.
-  - Often separated from commands in CQRS.
+- **Why** Prevents foreign concepts from leaking into the local ubiquitous language.
+- **Example** Adapter that translates legacy CRM's `Account` into local `Customer`.
 
-- **Read Model** A query-optimized representation of data.
-  - Often denormalized for performance.
+### Context Map
+High-level representation of relationships between bounded contexts.
 
-- **Projection** A transformed view of domain data optimized for reading.
+- **Why** Documents integration patterns, ownership, and direction of dependency.
 
-- **Event** A representation of something meaningful that happened in the domain.
-  - Captures business-significant state changes.
-  - Used for decoupling and integration.
-  - Common in CQRS architectures.
-  - Often denormalized for performance.
+### Modular Monolith
+Single deployable composed of independently designed modules (bounded contexts) with explicit boundaries.
 
-- **Event Store** A persistent repository for domain events.
-  - Often used for event sourcing.
+- **Why** Captures most benefits of microservices (boundaries, ownership) without operational cost; supports later extraction.
+- **See also** [[Bounded Context]]
 
-- **Event Sourcing** A system for storing and replaying domain events.
-  - Often used for eventual consistency.
+---
 
-### Integration Concepts
+## Clean Architecture
 
-- **Integration Event** An event published for consumption by external systems.
-  - Separate from internal domain events.
+### Clean Architecture
+Architectural style organizing code around dependency direction toward business rules.
 
-- **Integration Pattern** A common approach for integrating systems.
+- **Rule** Inner layers must not depend on outer layers.
+- **See also** [[Outside-in Rule]], [[Use Case]]
 
-- **Claim-Check Pattern** Integration pattern used in messaging and event-driven systems to manage large data payloads efficiently.
-  - Instead of passing bulky data directly through a message broker, the system stores the large payload in an external storage service and sends only a lightweight reference (the "claim check") to consumers.
+### Use Case
+Business operation exposed by the application layer.
 
-#### Integration Standards
+- **Why** Names a single application capability; one input, one outcome.
+- **Example** "Create order", "List order history".
+- **Implementation** [[Command]] or [[Query]] contract handled by a single [[Handler]].
 
-- **CloudEvents** A standardized event metadata specification.
-  - Promotes interoperability across event systems.
+### Handler
+Application component implementing one use case.
 
-- **OpenAPI (Open API Specification)** A standardized API description format.
-  - Commonly used for API documentation and contract validation.
+- **Why** "One command/query = one handler" prevents service-layer monoliths.
+- **Rules** Owns the transaction boundary. Does not invoke other handlers (no use-case chaining). Returns response DTO, projection, identifier value object, or void — never a managed JPA entity.
+- **Naming** `<Verb><Noun>Handler` (e.g., `CreateOrderHandler`).
+- **See also** [[Use Case]], [[Transaction Boundary]], [[Handler Return Contract]]
 
-- **AsyncAPI (Async API Specification)** A standardized asynchronous messaging specification.
-  - Commonly used for asynchronous communication.
+### Handler Return Contract
+Application handlers never return managed JPA entities or aggregates across the transaction boundary.
 
-- **JSON Schema** A standardized data description format.
-  - Commonly used for data validation and documentation.
+- **Why** Returning entities exposes mutation API and lazy associations to callers outside any transaction.
+- **Rule** Return DTO/projection (built inside the transaction), identity value object (`OrderId`), or void.
+- **See also** [[Handler]], [[Open-Session-In-View]]
 
-- **XML Schema** A standardized data description format.
+### DTO (Data Transfer Object)
+Structure used to transfer data between layers or systems.
 
-- **Message Specification** A standardized format for message payloads.
-  - Commonly used for message serialization and deserialization.
+- **Why** Prevents leaking domain models externally; decouples wire format from internal model.
+- **Variants** [[Wire DTO]] (transport-coupled, in REST adapter), [[Projection DTO]] (read-side application response shape), [[Command]] / [[Query]] (use-case input shape).
 
-- **Message Format** A standardized format for message transport.
+### Wire DTO
+Transport-coupled request/response model living in the REST adapter.
 
-#### Integration Protocols
+- **Why** Holds Jackson and OpenAPI annotations; isolates transport concerns from the application contract.
+- **Example** `CreateOrderRequest`, `OrderResponse`.
+- **Rule** Owned by `infrastructure.adapter.in.rest.dto`; never reaches application or domain.
+- **See also** [[Command]], [[Projection DTO]]
 
-- **REST (Representational State Transfer)** A web-based protocol for accessing resources.
-  - Commonly used for APIs and web services.
+### Projection DTO
+Read-side response shape returned by a query handler.
 
-- **SOAP (Simple Object Access Protocol)** A standardized messaging protocol.
-  - Used for legacy systems and interoperability.
+- **Why** Decouples read model from aggregate shape; enables optimized read paths.
+- **Example** `OrderHistoryProjection`.
+- **See also** [[Projection]], [[Read Model]]
 
-- **JSON (JavaScript Object Notation)** A lightweight data interchange format.
-  - Commonly used for APIs and web services.
+### Mapper
+Component translating between models (Wire DTO ↔ Command/Projection, Aggregate ↔ Projection).
 
-- **XML (eXtensible Markup Language)** A lightweight data interchange format.
-  - Commonly used for legacy systems and interoperability.
+- **Why** Centralizes transformation; keeps adapters and handlers focused.
+- **Rule** Pure transformation. No conditional enrichment or business decisions — those belong in policies or factories.
 
-- **HTTP (Hypertext Transfer Protocol)** A protocol for transferring hypertext documents.
-  - Commonly used for web services.
+### Transaction Boundary
+Scope within which changes are committed atomically.
 
-- **GraphQL (Graph Query Language)** A query language for APIs.
-  - Commonly used for APIs and web services.
+- **Rule** `@Transactional` lives on application service methods only. Domain and adapters are transaction-annotation-free.
+- **Rule** One aggregate mutated per transaction.
+- **See also** [[Handler]], [[Aggregate]]
 
-#### Integration middlewares
+### Validation
+Verification that incoming data satisfies structural or business requirements.
 
-- **Message Broker** A system for routing messages between services.
-  - Commonly used for asynchronous communication.
+- **Layers**
+  - **Wire validation** (`@NotBlank`, `@Size`, JSON parseability) on the Wire DTO in the REST adapter.
+  - **Structural validation** of commands (required fields, enum values) on the command record or as guard clauses in the handler.
+  - **Business validation** (invariants, eligibility, state transitions) in aggregate, policy, or domain service.
+- **Rule** No dedicated `application.validation` package; pre-flight orchestration checks inline in the handler.
 
-- **Event Bus** A system for publishing and subscribing to domain events.
+### Configuration Mapping
+Binding configuration values into typed application objects.
 
-- **Service Discovery** A mechanism allowing services to dynamically locate each other.
-  - Common in container orchestration platforms.
+- **Example** Quarkus `@ConfigMapping`.
 
-- **API Gateway** A centralized entrypoint routing and managing external API traffic.
-  - Often handles auth, rate limiting, and routing.
+---
 
-- **Schema Registry** A centralized store for message schemas.
-  - Common with Kafka and Avro-based systems.
+## CQRS
 
-### Security Concepts
+### CQRS (Command Query Responsibility Segregation)
+Separation of write operations from read operations.
 
-- **Authentication** Verification of identity.
-  - Determines who the caller is.
+- **Why** Different shapes, different scaling profiles, different consistency needs.
+- **See also** [[CQRS-lite]], [[Command]], [[Query]]
 
-- **Authorization** Verification of permissions.
-  - Determines what the caller may do.
+### CQRS-lite
+Pragmatic CQRS without separate write/read databases or eventual-consistency projections.
 
-- **RBAC (Role-Based Access Control)** Authorization model based on assigned roles.
+- **Why** Captures the benefit of separating command and query paths in code without paying the operational cost of two stores.
+- **When** Read-heavy UI pages and reports where aggregate shape doesn't match read shape.
+- **See also** [[CQRS]], [[Projection]]
 
-- **JWT (JSON Web Token)** A compact token format commonly used for authentication and authorization.
+### Command
+Request that changes system state.
 
-- **OpenId Connect** An open standard for authentication and authorization.
-  - Commonly used with OAuth 2.0. 
+- **Why** Names the intent; carries domain values, not transport types.
+- **Example** `CreateOrderCommand(customerId, lines)`.
+- **Rule** Built from primitives or domain value objects; transport-free.
+- **Contrast** [[Query]] does not modify state.
 
-- **OAuth 2.0** An authorization protocol for web applications.
-  - Commonly used with OpenId Connect.
+### Query
+Request retrieving data without modifying state.
 
-- **Zero Trust** A security model assuming no implicit trust between components.
-  - Requires explicit verification for every interaction.
+- **Example** `OrderHistoryQuery(customerId, pageSize)`.
+- **See also** [[Query Port]], [[Projection]]
 
-- **Multi-Factor Authentication (MFA)** A second factor in authentication.
-  - Provides an additional layer of security.
+### Query Port
+Outbound port for read-side queries that bypass aggregates.
 
-- **Two-Factor Authentication (2FA)** A second factor in authentication.
-  - Requires a physical token or a mobile app.
+- **Why** List, search, report, and cross-aggregate reads must not hydrate aggregates.
+- **Example** `OrderHistoryQueryPort` implemented by JPQL or native SQL adapter returning projections.
+- **See also** [[Read Path]], [[Projection]]
 
-- **Encryption** The process of converting plaintext data into a ciphertext.
-  - Prevents unauthorized access to sensitive information.
+### Read Model
+Query-optimized representation of data.
 
-- **PKI (Public Key Infrastructure)** A system for managing digital certificates.
-  - Commonly used for digital signatures and encryption.
+- **Why** Denormalized for read performance; matches UI shape, not domain shape.
+- **See also** [[Projection]]
 
-- **Certificate** A digital representation of a public key.
-  - Used for digital signatures and encryption.
-  - Commonly issued by a trusted authority.
+### Projection
+Transformed view of domain data optimized for reading.
 
-- **Certificate Authority (CA)** A trusted authority issuing digital certificates.
-  - Commonly used for digital signatures.
+- **Why** Avoids aggregate hydration for display-only reads.
+- **Example** `OrderHistoryProjection` returned by a JPQL query.
+- **Contrast** [[Read Model]] is the broader concept; Projection is a specific shape returned from a query.
 
-- **Digital Signature** A cryptographic signature of a message.
-  - Ensures data integrity and authenticity.
-  - Signed with a private key and verified with a public key.
+### Write Path
+Command handlers load and mutate aggregates through `domain.repository`.
 
-- **Private Key** A secret key used for signing or to decrypt a ciphertext.
-  - Stored securely and never shared.
+- **Rule** Domain repositories expose aggregate-shaped operations only.
 
-- **Public Key** A public representation of a private key
-  - Shared with anyone who needs to verify a digital signature.
-  - Used for encryption and digital signatures.
+### Read Path
+Query handlers return projection DTOs.
 
-- **Signing** The process of converting plaintext data into a digital signature.
-  - Ensures data integrity and authenticity.
+- **Routing**
+  - Single-aggregate read where projection matches aggregate shape: load through domain repository, map inside handler.
+  - List, search, report, cross-aggregate: go through query port; never hydrate aggregates.
+- **See also** [[Query Port]], [[Projection]]
 
-### Observability Concepts
+### Event Store
+Persistent repository for domain events.
 
-- **Observability** The ability to understand system behavior through telemetry.
-  - Includes logging, metrics, and tracing.
+- **When** Event sourcing.
 
-- **Structured Logging** Logging using machine-readable structured formats.
-  - Typically JSON-based.
+### Event Sourcing
+Storing and replaying domain events as the source of truth.
 
-- **Metrics** Numerical measurements describing system behavior.
-  - Examples: latency, throughput, error rate.
+- **Contrast** Standard persistence stores current state; event sourcing stores the sequence of changes.
 
-- **Distributed Tracing** Tracking requests across multiple services and components.
-  - Enables end-to-end request visibility.
+---
 
-- **Health Check** An endpoint or probe reporting application readiness and liveness.
+## Persistence
 
-- **Liveness Probe** A check determining whether the application process is alive.
+### JPA in the Domain Model
+Pragmatic exception: JPA annotations allowed on aggregates and entities.
 
-- **Readiness Probe** A check determining whether the application can serve traffic.
+- **Why** Preserves Hibernate dirty checking, batched updates, and avoids extra SELECTs from re-attaching detached objects.
+- **Tradeoff** Domain is not fully framework-free, but separating domain and persistence models costs more than it saves for CRUD-heavy systems.
+- **Boundary** Query paths bypass entities entirely and return DTOs via JPQL or native SQL.
 
-- **Correlation ID** An identifier propagated across requests and services for traceability.
+### Persistence Context
+Hibernate's session-scoped cache of managed entities.
 
-### Anti-Patterns
+- **Why** Enables dirty checking and identity guarantees.
+- **Rule** Bound to the transaction; closes when the handler returns.
 
-- **Anemic Domain Model** A domain model containing only data with no business behavior.
-  - Business logic leaks out of the domain into application services, weakening invariants and core domain ownership.
-  - Use case handlers accumulate procedural logic, validation, branching, and orchestration,
-    effectively creating a “service layer monolith” that bypasses domain modeling (Transaction Script).
-  - Generally discouraged in DDD.
+### Managed Entity
+Entity attached to an active persistence context.
 
-- **God Service** An oversized service accumulating unrelated responsibilities.
-  - Indicates weak boundaries and low cohesion.
+- **Why** Hibernate tracks changes and flushes them at commit.
+- **Rule** Never returned across the transaction boundary.
+- **See also** [[Handler Return Contract]], [[Open-Session-In-View]]
 
-- **Big Ball of Mud** A system with no clear architectural structure.
-  - Framework or persistence concerns leak into domain or application layers.
-  - Repositories evolve into generic query services instead of aggregate-focused persistence gateways.
-  - Command and query responsibilities mix, breaking read/write separation assumptions.
-  - Cross-context imports introduce hidden coupling and reduce modular independence.
-  - The shared module expands beyond primitives and silently couples bounded contexts.
-  - Mapping logic starts containing transformation rules, conditional enrichment, 
-    or decisions that should belong in domain policies or factories.
-  - Excessive subpackages reduce cohesion and increase cognitive overhead without real benefit.
-  - Heavy integration/e2e reliance replaces fast, focused unit and domain-level testing.
-  - High coupling and poor maintainability.
+### Detached Entity
+Entity that has left the persistence context.
 
-- **Shared Database Anti-Pattern** Multiple services directly sharing the same database schema.
-  - Creates strong coupling and coordination problems.
+- **Risk** Lazy associations throw on access; re-attachment requires explicit merge.
 
-- **Chatty Service Communication** Excessive synchronous calls between services.
-  - Increases latency and failure propagation.
+### Dirty Checking
+Hibernate detects field changes on managed entities and writes them at flush.
 
-- **Distributed Monolith** A microservice system with tight runtime coupling between services.
-  - Services cannot operate independently.
+- **Why** Removes need for explicit `update` calls.
+- **Requires** Active persistence context for the duration of mutation.
 
-- **Leaky Abstraction** An abstraction exposing implementation details to consumers.
-  - Breaks encapsulation and increases coupling.
+### Open-Session-In-View (OSIV)
+Anti-pattern keeping the Hibernate session open through serialization to the wire.
 
-- **Entity Service Trap** Organizing services purely around CRUD entities rather than business capabilities.
-  - Produces weak domain boundaries.
+- **Why disabled** Hides N+1 queries; runs reads outside transaction consistency; couples wire format to persistence model.
+- **Rule** Disabled. Mapping aggregate → DTO happens inside the handler while the session is open.
+- **See also** [[Handler Return Contract]], [[N+1 Query]]
 
-- **Smart Controller / Thin Domain** Business logic placed in controllers or application services instead of domain model.
-  - Use case handlers accumulate procedural logic and become hidden monoliths.
-  - Weakens domain encapsulation.
+### N+1 Query
+Pattern where loading a list issues one query for the list plus one per item.
 
-- **Over-Mocking** Excessive reliance on mocks in tests.
-  - Leads to brittle tests focused on implementation details.
+- **Why bad** Linear blow-up of database round-trips.
+- **Cause** Lazy associations accessed during serialization or in loops.
+- **Fix** Eager fetch where needed, or use the read path (projection query) instead of aggregate hydration.
 
-- **Temporal Coupling** Components requiring strict execution ordering to function correctly.
-  - Reduces resilience and flexibility.
+---
 
-- **Golden Hammer** Overusing a familiar technology or pattern regardless of suitability.
-  - Leads to poor architectural decisions.
+## Error model
 
-- **Vendor Lock-In** Excessive dependence on proprietary vendor features.
-  - Reduces portability and flexibility.
+### RFC 9457 Problem Details
+Standard format for HTTP error responses (`application/problem+json`).
 
-- **Premature Optimization** Optimizing before identifying real bottlenecks.
-  - Adds complexity without measurable benefit.
+- **Why** Machine-readable, extensible error payload with `type`, `title`, `status`, `detail`, `instance`, plus extension fields.
+- **Replaces** RFC 7807 (superseded).
 
-- **Technical Debt** The long-term cost of short-term implementation compromises.
-  - Cross-context imports occur for convenience, leading to implicit coupling and making 
-    eventual service extraction difficult.
-  - Over-reliance on integration/e2e tests due to weak domain/unit design, resulting in slow 
-    feedback loops and fragile test suites.
+### Domain Exception
+Transport-free exception carrying business context as typed fields.
 
-## Testing
+- **Why** Reusable across REST, gRPC, messaging adapters; no HTTP coupling.
+- **Rule** No HTTP status, no Problem Detail URI, no library annotations on the exception itself.
+- **Example** `OrderNotFoundException(OrderId id)`.
 
-### Core test types
+### Problem Detail Catalog
+Per-context registry mapping domain exceptions to HTTP status, Problem Detail `type` URI, and exposed extension fields.
 
-- **Unit Test** A test of a single unit of behavior, in isolation.
-  - No external systems (DB, HTTP, Kafka).
-  - Fast and deterministic.
-  - Typically tests domain logic or application orchestration.
+- **Where** `infrastructure.adapter.in.rest.error`.
+- **Why** Centralizes the mapping; makes the public error contract reviewable.
 
-- **Integration Test** A test verifying collaboration between components and real infrastructure.
-  - Uses real DBs, brokers, caches, or frameworks.
-  - Verifies wiring, persistence, messaging, and adapter behavior.
-  - Often uses Testcontainers.
+### Status Code Policy
+Consistent mapping across bounded contexts: not found → 404, invariant violation → 409, authorization failure → 403, authentication failure → 401, validation failure → 400, unexpected → 500.
 
-- **Contract Test** A test ensuring compatibility between communicating systems.
-  - Verifies API schemas or event contracts.
-  - Commonly used between microservices.
-  - Focuses on interfaces, not business logic.
+### Correlation ID
+Identifier propagated across requests and services for traceability.
 
-- **End-to-End (E2E) Test** A test exercising the system as a black box.
-  - Covers full workflows across all layers.
-  - Uses real runtime configuration where possible.
-  - Focuses on user/business scenarios.
+- **Why** Joins client-visible error and server-side log without leaking internal detail.
+- **Surfacing** `correlationId` extension field in Problem Detail and response header.
+- **See also** [[Distributed Tracing]], [[Observability]]
 
-- **Architecture Test** A test enforcing structural and dependency rules.
-  - Verifies layering and package boundaries.
-  - Ensures DDD and hexagonal constraints.
-  - Typically static analysis (e.g., ArchUnit).
+---
 
-- **Performance Test** A test measuring scalability and runtime characteristics.
-  - Measures throughput, latency, and concurrency.
-  - Uses production-like infrastructure.
-  - Includes load, stress, and soak testing.
+## Eventing and messaging
 
-- **Smoke Test** A lightweight test verifying the system starts and basic flows work.
-  - Often executed after deployment.
-  - Intended to catch catastrophic failures quickly.
+### Integration Event
+Event published for consumption by external systems or other bounded contexts.
 
-- **Regression Test** A test ensuring previously working behavior remains correct.
-  - Protects against unintended changes.
-  - Can exist at any test level.
+- **Contrast** [[Domain Event]] is internal and unversioned; integration event is a versioned contract.
+- **Rule** Created by the outbound messaging adapter by translating a domain event.
 
-- **Acceptance Test** A test validating business requirements from a stakeholder perspective.
-  - Usually scenario-oriented.
-  - Often overlaps with E2E testing.
+### Transactional Outbox
+Reliability pattern ensuring DB write and event publication are atomic.
 
-- **Snapshot Test** A test comparing current output against a stored reference snapshot.
-  - Common for APIs, UI responses, and serialized events.
-  - Useful for detecting unintended output changes.
+- **How** Events written to an outbox table in the same transaction as the aggregate; separate publisher reads and forwards them.
+- **Why** Prevents lost or duplicated events under failure.
+- **See also** [[At-least-once Delivery]], [[Idempotent Consumer]]
 
-### Test doubles
+### CloudEvents
+Standardized event envelope specification.
 
-- **Test Double** Generic term for any substitute of a real dependency in tests.
+- **Why** Interoperable metadata (`id`, `source`, `type`, `time`, `datacontenttype`, `dataschema`).
+- **Location** Envelope/binding helpers in `shared.infrastructure.adapter.out.messaging.cloudevents`.
+- **Rule** Domain and application never import the SDK.
 
-- **Stub** A test double providing predefined responses to calls.
-  - No behavior verification.
-  - Used to feed inputs into the system.
+### Event Versioning
+Policy for evolving event contracts that cross context or service boundaries.
 
-- **Mock** A test double verifying interactions between components.
-  - Used to assert method calls and invocation patterns.
-  - Common in application-layer orchestration tests.
+- **Default** Backward compatible: new optional fields are non-breaking; field removal/rename/type-change requires a new major version.
+- **Convention** Major version in CloudEvents `type` (`com.example.order.OrderPlaced.v1`). Minor changes don't change `type`; `dataschema` points to current URL.
+- **Coexistence** Producers publish old and new during transition; consumers migrate independently.
+- **See also** [[Schema Registry]], [[Backward Compatibility]]
 
-- **Fake** A lightweight working implementation replacing a real dependency.
-  - Contains simplified but functional logic.
-  - Common examples: in-memory repositories, fake caches.
+### Backward Compatibility
+A new producer can be consumed by an old consumer.
 
-- **Spy** A wrapper around a real object that records interactions.
-  - Executes real behavior unless overridden.
-  - Usually indicates partial mocking or difficult-to-isolate code.
+- **Why** Allows producers to evolve without breaking deployed consumers.
+- **Contrast** Forward compatibility (old producer, new consumer); full compatibility (both).
 
-- **Dummy** A placeholder object passed only to satisfy method signatures.
-  - Never actually used during the test.
+### Schema Registry
+Centralized store for event schemas with compatibility enforcement.
 
-### Test data concepts
+- **Why** Rejects events that violate the configured compatibility mode (`BACKWARD` per subject).
+- **Examples** Confluent Schema Registry, Apicurio.
 
-- **Fixture** Predefined test data or object graph used during testing.
-  - Can be executable code or static resources.
-  - Helps keep tests concise and reusable.
+### At-least-once Delivery
+Delivery guarantee where a message may be delivered more than once.
 
-- **Object Mother** A test utility creating predefined valid domain objects.
-  - Encodes meaningful business scenarios.
-  - Example: `paidOrder()`, `expiredSubscription()`.
+- **Implication** Consumers must be idempotent.
+- **See also** [[Idempotent Consumer]], [[Transactional Outbox]]
 
-- **Test Data Builder** A fluent builder for creating customized test objects.
-  - Flexible alternative to Object Mother.
-  - Reduces constructor noise in tests.
+### Idempotent Consumer
+Consumer that safely processes duplicate messages without changing the outcome.
 
-- **Factory (Test Factory)** A helper responsible for constructing test objects.
-  - Often encapsulates repetitive setup logic.
-  - May combine builders and default values.
+- **Critical for** At-least-once systems.
 
-- **Generator** A component producing randomized or fuzzed test data.
-  - Useful for property-based and robustness testing.
+### Idempotency
+Property allowing repeated execution without changing the outcome.
 
-- **Seed Data** Initial data inserted before test execution.
-  - Common for DB integration tests.
+- **See also** [[Business-key Idempotency]], [[Technical Idempotency]]
 
-- **Fixture File** A static resource used by tests.
-  - Examples: JSON payloads, SQL scripts, Avro schemas.
+### Business-key Idempotency
+Duplicate detection via a unique business identifier.
 
-### Test execution concepts
+- **How** Repository lookup before creation; database unique constraint as backstop. Duplicate input returns the existing aggregate.
+- **Example** External order ID, payment reference.
+- **Default** Preferred over technical idempotency when a natural dedup key exists.
 
-- **Test Suite** A collection of related tests executed together.
+### Technical Idempotency
+Duplicate detection via client-supplied key or message ID.
 
-- **Test Case** A single test scenario with defined inputs and expected outcomes.
+- **When** No natural business key (payment APIs, Kafka consumers without dedup key).
+- **How** `Idempotency-Key` header or message ID stored in an idempotency store with the response/outcome.
+- **See also** [[Idempotent Consumer]]
 
-- **Assertion** A statement verifying expected behavior or state.
+### Saga Pattern
+Distributed transaction pattern coordinating local transactions via events or commands.
 
-- **Setup** Initialization logic executed before a test.
+- **Why** Replaces distributed ACID transactions.
+- **Variants** Orchestration-based (central coordinator), choreography-based (peer events).
 
-- **Teardown** Cleanup logic executed after a test.
+### Eventual Consistency
+State across services converges asynchronously.
 
-- **Parameterized Test** A test executed multiple times with varying inputs.
+- **Why** Trade-off accepted when ACID across services is too costly.
 
-- **Property-Based Test** A test verifying invariants across many generated inputs.
-  - Focuses on properties rather than fixed examples.
+### Dead Letter Queue (DLQ)
+Queue for messages that cannot be processed successfully.
 
-- **Flaky Test** A nondeterministic test producing inconsistent results.
-  - Often caused by timing, shared state, or external dependencies.
+- **Why** Prevents poison messages from blocking the consumer.
 
-- **Golden Master Test** A test comparing current output against a trusted historical baseline.
-  - Common in legacy system refactoring.
+### Retry Policy
+Strategy for repeated execution after transient failures.
 
-### API and contract testing concepts
+- **Includes** Backoff, retry limits, jitter.
 
-- **OpenAPI Validation** Verification that an API implementation matches its OpenAPI specification.
-  - Validates requests and responses.
-  - Ensures schema correctness and API consistency.
+### Circuit Breaker
+Resilience mechanism preventing repeated calls to a failing dependency.
 
-- **Pact** A consumer-driven contract testing framework.
-  - Verifies provider APIs satisfy consumer expectations.
-  - Common in microservice architectures.
+- **Why** Avoids cascading failure and exhausting threads.
 
-- **Schema Registry** A centralized store for message schemas (e.g., Kafka Avro schemas).
-  - Helps enforce compatibility between producers and consumers.
+### Bulkhead Pattern
+Isolation strategy limiting failure impact between components.
 
-- **Consumer-Driven Contract** A contract defined from the consumer’s perspective.
-  - Providers verify they satisfy the consumer expectations.
+- **Why** Prevents resource exhaustion from spreading.
 
-### Infrastructure testing concepts
+### Timeout Pattern
+Bounded request duration before failure.
 
-- **Testcontainers** A framework for running disposable infrastructure containers during tests.
-  - Common for Postgres, Kafka, Redis integration testing.
+- **Why** Prevents indefinite waits on degraded dependencies.
 
-- **Embedded Database** An in-memory or lightweight database used during tests.
-  - Example: H2.
+### Load Balancing
+Distributing requests across instances.
 
-- **Sandbox Environment** A controlled external environment used for integration testing.
-  - Common for payment or identity providers.
+---
 
-- **WireMock** A tool for stubbing and simulating HTTP services.
-  - Frequently used in integration and contract tests.
+## Integration
 
-### Quality and reliability concepts
+### Event-Driven Architecture
+Architecture centered on publishing and reacting to events.
 
-- **Code Coverage** A metric indicating how much code is executed during tests.
-  - Includes line, branch, and path coverage.
-  - High coverage does not guarantee quality.
+- **Why** Loose coupling, asynchronous workflows.
 
-- **Mutation Testing** A technique evaluating test quality by introducing code changes (“mutants”).
-  - Good tests should detect the mutations.
+### Microservices
+Independently deployable, fine-grained services communicating over APIs and message brokers.
 
-- **Deterministic Test** A test producing identical results on every execution.
+- **Contrast** [[Modular Monolith]] separates modules without separate deployments.
 
-- **Idempotent Test** A test that can run repeatedly without affecting future executions.
+### Integration Pattern
+Common approach for integrating systems.
 
-- **Isolation** The principle that tests should not affect each other.
+### Claim-Check Pattern
+Large payloads stored externally; the message carries only a reference.
 
-- **Observability Testing** Verification of logs, metrics, traces, and monitoring signals.
+- **Why** Avoids broker payload limits.
 
-- **Concurrency Test** A test validating behavior under parallel execution.
-  - Common for locking and race-condition verification.
+### OpenAPI
+Standardized API description format.
 
-- **Chaos Test** A test intentionally introducing failures into the system.
-  - Used to verify resilience and fault tolerance in distributed systems.
+- **Use** Documentation, contract validation, code generation.
+
+### AsyncAPI
+Standardized asynchronous messaging description format.
+
+### JSON Schema
+Data description format for validation.
+
+### Message Broker
+System routing messages between services.
+
+- **Examples** Kafka, RabbitMQ.
+
+### Event Bus
+Publish/subscribe system for domain events.
+
+### Service Discovery
+Mechanism for services to locate each other at runtime.
+
+### API Gateway
+Centralized entrypoint for external API traffic.
+
+- **Responsibilities** Auth, rate limiting, routing.
+
+### REST
+Web protocol for accessing resources.
+
+### SOAP
+Standardized messaging protocol used by legacy systems.
+
+### GraphQL
+Query language for APIs allowing clients to select response shape.
+
+### HTTP
+Transport protocol for hypertext and web APIs.
+
+### JSON
+Lightweight data interchange format.
+
+### XML
+Markup-based data interchange format.
+
+---
+
+## Security
+
+### Authentication
+Verification of identity (who the caller is).
+
+### Authorization
+Verification of permissions (what the caller may do).
+
+- **See also** [[RBAC]], [[ABAC]]
+
+### RBAC (Role-Based Access Control)
+Authorization model based on roles assigned to subjects.
+
+### ABAC (Attribute-Based Access Control)
+Authorization model based on attributes of subject, resource, and context.
+
+- **Contrast** [[RBAC]] uses roles only; ABAC supports finer-grained policy.
+
+### JWT (JSON Web Token)
+Compact token format for authentication and authorization claims.
+
+### OpenID Connect
+Identity layer on top of OAuth 2.0.
+
+### OAuth 2.0
+Authorization protocol for delegated access.
+
+### Zero Trust
+Security model assuming no implicit trust between components.
+
+### MFA / 2FA
+Multi-factor / two-factor authentication.
+
+### Encryption
+Converting plaintext to ciphertext.
+
+### PKI (Public Key Infrastructure)
+System for managing digital certificates.
+
+### Certificate
+Digital representation of a public key issued by a trusted authority.
+
+### Certificate Authority (CA)
+Authority issuing digital certificates.
+
+### Digital Signature
+Cryptographic signature verifying integrity and authenticity.
+
+### Private Key / Public Key
+Asymmetric keypair: private signs/decrypts, public verifies/encrypts.
+
+---
+
+## Observability
+
+### Observability
+Ability to understand system behavior through telemetry.
+
+- **Pillars** Logging, metrics, tracing.
+
+### Structured Logging
+Logging in a machine-readable format, typically JSON.
+
+### Metrics
+Numerical measurements (latency, throughput, error rate).
+
+### Distributed Tracing
+Tracking requests across services and components.
+
+- **Example** OpenTelemetry spans propagated via headers.
+
+### Health Check
+Endpoint reporting application liveness/readiness.
+
+### Liveness Probe
+Check determining whether the process is alive.
+
+### Readiness Probe
+Check determining whether the process can serve traffic.
+
+---
+
+## Anti-patterns
+
+### Anemic Domain Model
+Domain holds only data; behavior leaks to application services.
+
+- **Why bad** Aggregate invariants weaken; application becomes [[Transaction Script]] monolith.
+- **Fix** Move business behavior back to aggregates and domain services.
+
+### Transaction Script
+Procedural application service containing branching, validation, and orchestration that should live in the domain.
+
+- **Why bad** Bypasses domain modeling; hides invariants in handler chains.
+
+### God Service
+Oversized service accumulating unrelated responsibilities.
+
+### Big Ball of Mud
+System with no clear architectural structure.
+
+- **Signs** Framework leaks into domain; repositories become generic query services; command/query mix; cross-context imports; shared module grows beyond primitives; mappers contain business decisions; integration tests substituted for unit/domain tests.
+
+### Shared Database Anti-Pattern
+Multiple services sharing one schema.
+
+- **Why bad** Creates hidden coupling and coordination tax.
+
+### Chatty Service Communication
+Excessive synchronous calls between services.
+
+### Distributed Monolith
+Microservices with tight runtime coupling; cannot deploy independently.
+
+### Leaky Abstraction
+Abstraction exposing implementation details to consumers.
+
+### Entity Service Trap
+Services organized around CRUD entities instead of business capabilities.
+
+### Smart Controller / Thin Domain
+Business logic in controllers or application services.
+
+- **See also** [[Anemic Domain Model]]
+
+### Over-Mocking
+Excessive reliance on mocks producing tests coupled to implementation.
+
+### Temporal Coupling
+Components requiring strict execution ordering to function.
+
+### Golden Hammer
+Overusing a familiar technology regardless of fit.
+
+### Vendor Lock-In
+Excessive dependence on proprietary vendor features.
+
+### Premature Optimization
+Optimizing before identifying real bottlenecks.
+
+### Technical Debt
+Long-term cost of short-term implementation compromises.
+
+---
+
+## Testing — core test types
+
+### Unit Test
+Test of a single unit of behavior in isolation.
+
+- **Rule** No external systems; no framework boot.
+- **Use** Domain logic, application orchestration with mocked ports.
+
+### Integration Test
+Test verifying collaboration with real infrastructure (DB, broker, framework).
+
+- **Tools** QuarkusTest, Testcontainers.
+
+### Contract Test
+Test ensuring compatibility between communicating systems.
+
+- **Variants**
+  - **Provider-driven** (this template): provider publishes OpenAPI; provider tests verify implementation matches spec; consumers verify usage stays within it.
+  - **Consumer-driven**: consumer defines contracts; provider verifies them. Not used in this template.
+- **See also** [[Bidirectional Contract Testing]], [[OpenAPI Validation]], [[Pact]]
+
+### Bidirectional Contract Testing
+Pact mode where consumer and provider verify against the published OpenAPI spec independently, then matched in the Pact Broker.
+
+- **Why** Combines schema-first authority with Pact's deployment-gating (`can-i-deploy`).
+- **Contrast** Classic consumer-driven Pact has providers verify live consumer pacts; not used here.
+
+### End-to-End (E2E) Test
+Black-box test exercising full workflows across all layers.
+
+### Architecture Test
+Test enforcing structural and dependency rules.
+
+- **Tool** ArchUnit.
+- **Rule** Every architectural constraint in documentation has a test; rules without a test are aspirational and subject to drift.
+
+### Performance Test
+Test measuring scalability and runtime characteristics (throughput, latency, concurrency, soak).
+
+### Smoke Test
+Lightweight test verifying basic startup and flow after deployment.
+
+### Regression Test
+Test ensuring previously working behavior remains correct.
+
+### Acceptance Test
+Test validating business requirements from stakeholder perspective.
+
+### Snapshot Test
+Test comparing current output against a stored reference.
+
+---
+
+## Testing — test doubles
+
+### Test Double
+Generic term for any substitute of a real dependency.
+
+### Stub
+Test double returning predefined responses.
+
+- **Contrast** No interaction assertions; pure input source.
+
+### Mock
+Test double verifying interactions.
+
+- **Risk** Over-mocking couples tests to implementation.
+- **See also** [[Over-Mocking]]
+
+### Fake
+Lightweight working implementation (e.g., in-memory repository).
+
+### Spy
+Wrapper around a real object that records interactions.
+
+- **Smell** Indicates partial mocking or hard-to-isolate code.
+
+### Dummy
+Placeholder passed to satisfy a signature; never used during the test.
+
+---
+
+## Testing — test data
+
+### Fixture
+Predefined test data or object graph.
+
+### Object Mother
+Test utility creating predefined valid domain objects.
+
+- **Example** `paidOrder()`, `expiredSubscription()`.
+- **Contrast** [[Test Data Builder]] is flexible; Object Mother is named-scenario.
+
+### Test Data Builder
+Fluent builder for creating customized test objects.
+
+### Factory (Test Factory)
+Helper constructing test objects with default values.
+
+### Generator
+Component producing randomized or fuzzed test data.
+
+- **Use** Property-based testing.
+
+### Seed Data
+Initial data inserted before test execution.
+
+### Fixture File
+Static resource (JSON payloads, SQL scripts, Avro schemas).
+
+---
+
+## Testing — execution
+
+### Test Suite
+Collection of related tests executed together.
+
+### Test Case
+Single test scenario with defined inputs and expected outcomes.
+
+### Assertion
+Statement verifying expected behavior or state.
+
+### Setup / Teardown
+Initialization / cleanup logic around a test.
+
+### Parameterized Test
+Test executed multiple times with varying inputs.
+
+### Property-Based Test
+Test verifying invariants across many generated inputs.
+
+### Flaky Test
+Nondeterministic test producing inconsistent results.
+
+- **Causes** Timing, shared state, external dependencies.
+
+### Golden Master Test
+Test comparing current output against a trusted historical baseline.
+
+---
+
+## Testing — contract and infrastructure
+
+### OpenAPI Validation
+Verification that an API implementation matches its OpenAPI specification.
+
+### Pact
+Contract testing framework; used here in bidirectional mode.
+
+### Consumer-Driven Contract
+Contract defined from the consumer's perspective.
+
+- **Status in this template** Not used; provider-driven OpenAPI is authoritative.
+
+### Testcontainers
+Framework for running disposable infrastructure containers during tests.
+
+### Embedded Database
+In-memory or lightweight DB for tests (e.g., H2).
+
+### Sandbox Environment
+Controlled external environment for integration testing.
+
+### WireMock
+Tool for stubbing HTTP services.
+
+---
+
+## Testing — quality
+
+### Code Coverage
+Metric of executed code (line, branch, path).
+
+- **Caveat** High coverage does not guarantee quality.
+
+### Mutation Testing
+Evaluating test quality by introducing code changes ("mutants") that good tests should detect.
+
+### Deterministic Test
+Test producing identical results on every execution.
+
+### Idempotent Test
+Test that can run repeatedly without affecting future executions.
+
+### Isolation
+Tests should not affect each other.
+
+### Observability Testing
+Verification of logs, metrics, traces, and monitoring signals.
+
+### Concurrency Test
+Test validating behavior under parallel execution.
+
+### Chaos Test
+Test intentionally introducing failures to verify resilience.
