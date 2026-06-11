@@ -1,4 +1,4 @@
-package org.example.shared.contract.adapter.in.rest;
+package org.example.shared.contract;
 
 import io.quarkus.security.AuthenticationFailedException;
 import io.quarkus.security.ForbiddenException;

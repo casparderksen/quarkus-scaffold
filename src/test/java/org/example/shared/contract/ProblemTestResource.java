@@ -1,4 +1,4 @@
-package org.example.shared.contract.adapter.in.rest;
+package org.example.shared.contract;
 
 import io.quarkus.arc.profile.IfBuildProfile;
 import jakarta.ws.rs.Consumes;

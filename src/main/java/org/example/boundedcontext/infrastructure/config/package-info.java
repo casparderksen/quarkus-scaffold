@@ -3,4 +3,4 @@
  *
  * <p>Keep configuration centralized and type-safe.
  */
-package org.example.boundedcontext.infrastructure.adapter.config;
+package org.example.boundedcontext.infrastructure.config;
