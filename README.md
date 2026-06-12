@@ -35,7 +35,8 @@ The application is structured according to Hexagonal / DDD / Clean Architecture 
 The structure enables (eventual) extraction of Maven modules or independent services from a modular monolith.
 It also supports sharing cross-cutting concerns (shared kernel, infrastructure) across teams.
 
-See [Glossary](doc/glossary.md) for an explanation of concepts and see [Testing Strategy](doc/testing-strategy.md)
+See [Glossary](doc/glossary.md) for an explanation of concepts, [Adapter Flows](doc/adapter-flows.md) for
+end-to-end call chains per inbound and outbound adapter, and [Testing Strategy](doc/testing-strategy.md)
 for testing guidelines supported by this template.
 
 ### Precedence between styles
