@@ -6,14 +6,18 @@ are permitted.
 
 ## Test types overview
 
-| Type          | Package                          | Tooling                                                   |
-|---------------|----------------------------------|-----------------------------------------------------------|
-| Unit          | `<context>.unit`                 | JUnit 5, AssertJ, Mockito                                 |
-| Integration   | `<context>.integration`          | QuarkusTest, Testcontainers, REST Assured                 |
-| Contract      | `<context>.contract.{provider,consumer}` | REST Assured + OpenAPI validator, Pact (bidirectional) |
-| E2E           | `<context>.e2e`                  | REST Assured, Cucumber (BDD), Playwright (if UI)          |
-| Architecture  | `shared.architecture`            | ArchUnit                                                  |
-| Performance   | `<context>.performance`          | JMH (micro), Gatling/k6 (load)                            |
+| Type                  | Package                         | Toolchain                                                            |
+|-----------------------|---------------------------------|----------------------------------------------------------------------|
+| Unit                  | `<context>.unit`                | JUnit 5, AssertJ, Mockito                                            |
+| Integration           | `<context>.integration`         | QuarkusTest, Testcontainers, REST Assured                            |
+| Contract (provider)   | `<context>.contract.provider`   | REST Assured + OpenAPI request/response validator                    |
+| Contract (consumer)   | `<context>.contract.consumer`   | Pact (bidirectional) against provider's OpenAPI artifact             |
+| Contract (messaging)  | `<context>.contract.provider`   | JSON Schema / Avro validation against schema registry (`BACKWARD`)   |
+| E2E (API/BDD)         | `<context>.e2e`                 | REST Assured, Cucumber                                               |
+| E2E (UI)              | `<context>.e2e`                 | Playwright (only when UI exists)                                     |
+| Architecture          | `shared.architecture`           | ArchUnit                                                             |
+| Performance (micro)   | `<context>.performance`         | JMH (domain/pure-Java hotspots only)                                 |
+| Performance (load)    | `<context>.performance`         | Gatling or k6 (HTTP/messaging load and concurrency)                  |
 
 Shared test infrastructure lives under `shared.{architecture, container, config, mock, security, contract, clock, util}`
 and `src/test/resources/{fixture, config, certificate}`.
@@ -42,8 +46,9 @@ and `src/test/resources/{fixture, config, certificate}`.
 - **Goal:** Verify collaboration between components and real infrastructure behavior.
 - **Layer:** Application, Infrastructure (plus domain behavior under real persistence).
 - **Package:** `<context>.integration`.
-- **Toolchain:** `@QuarkusTest` / `@QuarkusIntegrationTest`, Testcontainers (Postgres, Kafka, Redis),
-  REST Assured for HTTP-driven cases.
+- **Toolchain:** `@QuarkusTest` for in-JVM tests against a running Quarkus instance;
+  `@QuarkusIntegrationTest` for black-box tests against the packaged artifact (JAR or native image).
+  Testcontainers (Postgres, Kafka, Redis) for external dependencies. REST Assured for HTTP-driven cases.
 - **Test doubles:**
   - Real infrastructure (preferred): DB, Kafka, Redis via Testcontainers.
   - Stubs (allowed only for uncontrollable third-party systems).
@@ -64,25 +69,33 @@ and `src/test/resources/{fixture, config, certificate}`.
 Contracts are provider-driven and schema-first. The provider's OpenAPI specification is authoritative.
 See [README — Contract testing](../README.md#contract-testing).
 
-### Provider side (`<context>.contract.provider`)
+### REST provider side (`<context>.contract.provider`)
 
 - **Goal:** Verify the running service matches its published OpenAPI spec.
-- **Toolchain:** REST Assured + OpenAPI request/response validator (Atlassian swagger-request-validator),
-  Pact provider verification in bidirectional mode.
+- **Toolchain:** REST Assured + OpenAPI request/response validator (Atlassian swagger-request-validator).
+  Pact provider verification participates in bidirectional mode by publishing the provider's OpenAPI
+  artifact to the broker; no live consumer-pact replay.
 - **Guidelines:**
   - Boot the service with `@QuarkusTest`.
   - Validate every documented operation against the spec.
-  - For events: validate published CloudEvents envelope and payload against the JSON Schema
-    registered in the schema registry. Compatibility mode `BACKWARD`.
-  - No business assertions — shape and status only.
+  - Shape and status only — business behavior is asserted by integration and E2E tests.
 
-### Consumer side (`<context>.contract.consumer`)
+### REST consumer side (`<context>.contract.consumer`)
 
 - **Goal:** Verify this service's usage of an upstream provider stays within the provider's published spec.
 - **Toolchain:** Pact in bidirectional mode against the provider's OpenAPI artifact.
 - **Guidelines:**
   - Pact files published to the Pact Broker; deployment gated by `can-i-deploy` when available.
   - Consumer-driven Pact (provider verifies live consumer pacts) is not used.
+
+### Messaging contract (`<context>.contract.provider`)
+
+- **Goal:** Verify published CloudEvents envelope and payload conform to the registered schema.
+- **Toolchain:** JSON Schema (or Avro) validation against schema registry; compatibility mode `BACKWARD`.
+  See [README — Event versioning](../README.md#event-versioning).
+- **Guidelines:**
+  - Validate envelope (`type`, `dataschema`, `source`, `id`) and payload independently.
+  - Producers cannot publish events that fail compatibility check.
 
 Shared contract test utilities live in `shared.contract`.
 
@@ -138,7 +151,7 @@ Shared contract test utilities live in `shared.contract`.
 | `shared.architecture`    | ArchUnit rules (minimum rule set 1–9).                                  |
 | `shared.container`       | Reusable Testcontainers definitions (Postgres, Kafka, Redis).           |
 | `shared.config`          | Shared test `ConfigMapping` interfaces.                                 |
-| `shared.mock`            | Shared mocks, stubs, fakes.                                             |
+| `shared.mock`            | Shared mocks, stubs, fakes for application/integration layers — not domain tests. |
 | `shared.security`        | JWT/authentication test helpers (token minting, role injection).        |
 | `shared.contract`        | Shared consumer/provider contract test utilities.                       |
 | `shared.clock`           | Fixed/test clock implementations for deterministic time-based tests.    |
