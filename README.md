@@ -134,13 +134,18 @@ org.example
 │       │   │   │   ├── dto           # REST wire DTOs (request/response, transport-coupled)
 │       │   │   │   ├── mapper        # Wire DTO ↔ command/projection mapping
 │       │   │   │   └── error         # Problem Detail mapping + per-context catalog
-│       │   │   ├── kafka             # Kafka consumers (event-driven inbound)
+│       │   │   ├── messaging         # Inbound messaging implementations
+│       │   │   │   ├── event         # Inbound integration event DTOs (transport-neutral)
+│       │   │   │   ├── mapper        # Inbound event → Command mappers
+│       │   │   │   └── kafka         # Kafka consumers (event-driven outbound)
 │       │   │   └── scheduler         # Scheduled jobs (driving adapters)
 │       │   └── out                   # Outbound adapters (driven adapters)
 │       │       ├── persistence       # Database access implementations
 │       │       │   ├── jpa           # JPA/Hibernate implementations (aggregate repositories)
 │       │       │   └── query         # Read-side optimized queries / projections
-│       │       ├── messaging         # Messaging implementations
+│       │       ├── messaging         # Outbound messaging implementations
+│       │       │   ├── event         # Outbound integration event DTOs (transport-neutral)
+│       │       │   ├── mapper        # Domain event → outbound event mappers
 │       │       │   └── kafka         # Kafka producers (event-driven outbound)
 │       │       └── client            # External service integrations (REST/gRPC/SOAP)
 │       └── config                    # Application configuration interfaces (ConfigMapping)
@@ -156,12 +161,18 @@ org.example
     │
     └── infrastructure                # Infrastructure layer
         ├── adapter                   # Hexagonal adapters
+        │   ├── in                    # Inbound adapters (driving adapters)
+        │   │   └── scheduler         # Scheduled jobs (e.g. outbox poller)
         │   └── out                   # Outbound adapters (driven adapters)
         │       ├── messaging         # Messaging implementations
         │       │   ├── cloudevents   # CloudEvents envelope + binding
         │       │   └── outbox        # Transactional outbox infrastructure
+        │       ├── persistence       # Shared persistence infrastructure
+        │       │   └── jpa           # JPA/Hibernate cross-cutting utilities
+        │       │       └── converter # Generic JPA attribute converters (URI, etc.)
         │       ├── client            # External service integrations
         │       └── cache             # Cache infrastructure
+        ├── config                    # Cross-cutting bootstrap and ConfigMapping interfaces
         ├── security                  # Authentication & authorization infrastructure
         ├── observability             # Logging, metrics, tracing, correlation ID propagation
         └── health                    # Health check endpoints (liveness/readiness)
@@ -402,7 +413,7 @@ Each test carries Javadoc explaining the rule, why it exists, common failure mod
 | REST Resource       | `infrastructure.adapter.in.rest`                        | `OrderResource`             |
 | REST Wire DTO       | `infrastructure.adapter.in.rest.dto`                    | `CreateOrderRequest`        |
 | REST Wire Mapper    | `infrastructure.adapter.in.rest.mapper`                 | `OrderRestMapper`           |
-| Kafka Consumer      | `infrastructure.adapter.in.kafka`                       | `OrderEventConsumer`        |
+| Kafka Consumer      | `infrastructure.adapter.in.messaging.kafka`             | `OrderEventConsumer`        |
 | Scheduler           | `infrastructure.adapter.in.scheduler`                   | `OrderReconciliationJob`    |
 | Persistence Adapter | `infrastructure.adapter.out.persistence.jpa`            | `OrderJpaRepositoryAdapter` |
 | Query Adapter       | `infrastructure.adapter.out.persistence.query`          | `OrderHistoryQueryAdapter`  |

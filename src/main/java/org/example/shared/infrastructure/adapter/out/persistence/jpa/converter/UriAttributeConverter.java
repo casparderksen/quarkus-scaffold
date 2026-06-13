@@ -1,4 +1,4 @@
-package org.example.shared.infrastructure.adapter.out.persistence.attributeconverters;
+package org.example.shared.infrastructure.adapter.out.persistence.jpa.converter;
 
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;

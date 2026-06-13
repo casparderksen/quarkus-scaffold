@@ -1,4 +1,4 @@
-package org.example.shared.infrastructure.adapter.in.rest;
+package org.example.shared.infrastructure.config;
 
 import jakarta.ws.rs.ApplicationPath;
 import jakarta.ws.rs.core.Application;

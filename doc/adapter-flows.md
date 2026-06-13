@@ -89,7 +89,7 @@ Asynchronous write entrypoint driven by external integration events. The consume
 ```
 Kafka record on subscribed topic
   ▼
-<X>EventConsumer (infrastructure.adapter.in.kafka)
+<X>EventConsumer (infrastructure.adapter.in.messaging.kafka)
   ├─ CloudEvents binding extract → CloudEvent envelope
   │     (shared.infrastructure.adapter.out.messaging.cloudevents helpers)
   ├─ schema validate payload against dataschema
