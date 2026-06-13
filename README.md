@@ -124,8 +124,7 @@ org.example
 │   │   ├── service                   # Application services / use case handlers
 │   │   │   ├── command               # Command handlers: orchestrate outbound ports and domain / manage transactions
 │   │   │   └── query                 # Query handlers / read orchestration
-│   │   └── dto                       # Transport-oriented models
-│   │       └── projection            # Read-side projection models
+│   │   └── projection                # Read-side projection models
 │   │
 │   └── infrastructure                # Technical implementation layer (adapters, frameworks, external systems)
 │       ├── adapter                   # Hexagonal adapters
@@ -404,7 +403,7 @@ Each test carries Javadoc explaining the rule, why it exists, common failure mod
 | Query Port       | `application.port.out.query`  | `OrderHistoryQueryPort`  |
 | Use Case Handler | `application.service.command` | `CreateOrderHandler`     |
 | Query Handler    | `application.service.query`   | `OrderHistoryHandler`    |
-| Projection DTO   | `application.dto.projection`  | `OrderHistoryProjection` |
+| Projection DTO   | `application.projection`      | `OrderHistoryProjection` |
 
 #### Infrastructure types
 
