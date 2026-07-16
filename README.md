@@ -36,8 +36,9 @@ The structure enables (eventual) extraction of Maven modules or independent serv
 It also supports sharing cross-cutting concerns (shared kernel, infrastructure) across teams.
 
 See [Glossary](doc/glossary.md) for an explanation of concepts, [Adapter Flows](doc/adapter-flows.md) for
-end-to-end call chains per inbound and outbound adapter, and [Testing Strategy](doc/testing-strategy.md)
-for testing guidelines supported by this template.
+end-to-end call chains per inbound and outbound adapter, [Testing Strategy](doc/testing-strategy.md)
+for testing guidelines supported by this template, and [Extracting to microservices](doc/extracting-microservices.md)
+for turning a bounded context into a separately deployed service.
 
 ### Precedence between styles
 
@@ -214,8 +215,8 @@ resources
 **Database migrations (`src/main/resources/db/migration`):**
 ```
 db/migration
-├── <bounded-context>/                # Per-context migrations, table prefix <context>_
-└── shared/                           # Shared kernel tables (outbox, idempotency), prefix shared_
+├── <bounded-context>/                # Per-context migrations (unprefixed table names)
+└── shared/                           # Shared kernel tables (outbox, idempotency)
 ```
 
 ### Pragmatic Exception: JPA in the Domain Model
@@ -336,20 +337,36 @@ When a Pact Broker is available, bidirectional verification gates deployment via
 
 ### Database migrations
 
-Each bounded context owns its database tables and Flyway migrations. Migrations live under `src/main/resources/db/migration/<context>/`. The shared kernel owns cross-cutting tables (outbox, idempotency store) under `db/migration/shared/`. All migrations target a single schema; bounded contexts are isolated by table-name prefix (`order_*`, `customer_*`, `shared_*`).
+Each bounded context owns its database tables and Flyway migrations. Migrations live under `src/main/resources/db/migration/<context>/`. The shared kernel owns cross-cutting tables (outbox, idempotency store) under `db/migration/shared/`. All migrations target a single schema. Bounded contexts are isolated by ownership and review, not by table-name prefix: table names are unprefixed (`orders`, not `order_orders`; `outbox`, not `shared_outbox`). A migration touches only tables owned by its context, and no cross-context foreign key or join is allowed. When a table name would clash across contexts, resolve it per-table with an explicit table-name override — only when a clash actually occurs.
 
 Migration version numbers form a single global sequence. When adding a migration in any context, use the next available version. Concurrent migrations across contexts are resolved in review, the same way as concurrent code changes.
 
 Cross-context coupling is forbidden at three levels:
 - **Migrations.** A migration in `db/migration/<context>/` may only touch tables owned by that context.
 - **Data movement.** SQL must not copy or move rows between contexts. Cross-context data flow is implemented as application code using domain events.
-- **References.** Tables in one context must not declare foreign keys to tables in another context, and queries must not join across contexts. A context holds an ID (plain column, no FK constraint) and obtains data via the source context's API or via a local projection built from domain events.
+- **References.** Tables in one context must not declare foreign keys to tables in another context, and queries must not join across contexts. A context holds an ID (plain column, no FK constraint) and obtains data across the boundary the same way application code does: by calling the source context's Open-Host Service (its `application.port.in`), or from a local projection built from that context's integration events. See [Cross-context integration](#cross-context-integration).
 
-When a bounded context is extracted to a separate service, its migration folder moves with it. The new service runs the same migrations against its own database; the monolith drops the location from its Flyway configuration. Tables may be renamed to drop the prefix at that point as a cosmetic follow-up.
+When a bounded context is extracted to a separate service, its migration folder moves with it. The new service runs the same migrations against its own database; the monolith drops the location from its Flyway configuration. See [Extracting to microservices](doc/extracting-microservices.md) for the full procedure.
 
 ### Scheduled jobs
 
 Scheduled jobs are inbound adapters under `infrastructure.adapter.in.scheduler`. The job method extracts arguments (time window, batch size) and invokes a command or query handler. Domain logic, transactions, and direct repository access do not appear in the job class.
+
+### Cross-context integration
+
+A bounded context that needs data owned by another context reaches it **only** through that context's Open-Host Service: its inbound published API in `application.port.in` — the same command and query use cases its REST adapter drives. It never touches another context's `domain`, `application.port.out`, `infrastructure`, or database tables; those are private. This is the single permitted cross-context entry point.
+
+In the modular monolith the consumer injects the provider's `application.port.in` interface and the call is an ordinary in-process CDI call. When the provider is later extracted to its own service, the interface is unchanged: a REST client adapter implements the same port and the consumer is unaffected. Routing through the published port rather than reaching into the provider is what lets the integration mechanism change without touching the consumer's application logic.
+
+We inject the provider's inbound port directly, for simplicity. Purists may instead have the consumer define its own outbound port in its own vocabulary and translate in an [anti-corruption layer](doc/glossary.md) — do that only when the provider's language would otherwise leak into the consumer and cause harm.
+
+Cross-context consistency is eventual. State changes never propagate by a synchronous command into another context inside the caller's transaction; they go through integration events (the inbound and outbox flows). The Open-Host Service is for obtaining data, not for driving another context's writes.
+
+Once a context is extracted, prefer building a **local projection fed by the provider's integration events** (CloudEvents) over a synchronous cross-service call. A synchronous call in-process is cheap; the same call across the network couples the two services at runtime and availability — a [distributed monolith](doc/glossary.md). Reserve the synchronous REST client for reads whose freshness genuinely requires it.
+
+Packages carry no explicit context marker: every top-level package under `org.example` except `shared` is a bounded context and is subject to these rules. There is no unchecked "escape hatch" package.
+
+See [Extracting to microservices](doc/extracting-microservices.md) for the extraction procedure and [Adapter Flows](doc/adapter-flows.md) (flow #10) for the call chain.
 
 ### Dependency rules
 
@@ -371,7 +388,7 @@ The minimum rule set encoded:
 2. No framework dependencies in the domain (except JPA) or in the application (except Jakarta Validation and Jakarta Transaction annotations).
 3. Inbound adapters depend only on `application.port.in` (plus projection DTOs).
 4. Outbound adapters depend only on `application.port.out` and `domain`.
-5. No cross bounded-context dependencies (except via `shared`).
+5. No cross bounded-context dependencies, except via `shared` or into a provider context's `application.port.in` (its Open-Host Service). Every other cross-context edge fails.
 6. Transaction boundary at the application handler: `@Transactional` only on `application.service.*`; domain and adapter free of transaction annotations; handlers do not invoke other handlers (exemptions documented in a named allow-list, not introduced ad hoc).
 7. `domain.repository` methods do not return projection DTOs; query-shape parameters belong to the query path.
 8. One command/query = one handler.

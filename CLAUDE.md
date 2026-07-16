@@ -12,7 +12,7 @@
 
 ## Coupling rules
 
-- No cross bounded-context dependencies except via shared kernel primitives
+- No cross bounded-context dependencies except via shared kernel primitives, or into a provider context's `application.port.in` (Open-Host Service)
 - No DTOs in domain layer
 - No direct external calls (HTTP/Kafka/DB) from domain or application logic; use ports/adapters instead
 

@@ -320,6 +320,29 @@ Translation layer protecting a bounded context from another model.
 High-level representation of relationships between bounded contexts.
 
 - **Why** Documents integration patterns, ownership, and direction of dependency.
+- **See also** [[Open-Host Service]], [[Upstream / Downstream Context]], [[Shared Kernel]], [[Anti-Corruption Layer]]
+
+### Open-Host Service (OHS)
+Published inbound API through which a bounded context offers its capabilities to other contexts.
+
+- **Why** Gives consumers one stable front door (the provider's `application.port.in`) instead of reaching into its internals; the integration mechanism (in-process call vs REST) can change without touching consumers.
+- **How** Consumer injects the provider's inbound port. In a modular monolith it is an in-process CDI call; on extraction a REST client adapter implements the same port unchanged.
+- **Rule** The only permitted cross-context entry point. A consumer never touches another context's `domain`, `application.port.out`, `infrastructure`, or tables.
+- **Contrast** [[Shared Kernel]] shares a model; OHS shares a *service*. [[Anti-Corruption Layer]] protects the consumer from a foreign model.
+- **See also** [[Published Language]], [[Context Map]], [[Distributed Monolith]], [[Modular Monolith]]
+
+### Published Language
+Well-documented shared contract a context exposes for integration.
+
+- **Why** Consumers depend on a deliberately published vocabulary, not on internal domain types.
+- **Example** The command/query contracts in `application.port.in`; the versioned integration events a context publishes.
+- **See also** [[Open-Host Service]], [[Integration Event]]
+
+### Upstream / Downstream Context
+Direction of influence between two integrated contexts.
+
+- **Definition** Upstream (supplier) provides; downstream (consumer) depends. Changes in the upstream flow down to the downstream.
+- **See also** [[Open-Host Service]], [[Context Map]], [[Anti-Corruption Layer]]
 
 ### Modular Monolith
 Single deployable composed of independently designed modules (bounded contexts) with explicit boundaries.
@@ -858,6 +881,11 @@ Excessive synchronous calls between services.
 
 ### Distributed Monolith
 Microservices with tight runtime coupling; cannot deploy independently.
+
+- **Why bad** Combines the operational cost of microservices with the coupling of a monolith; one service's outage or change cascades to others.
+- **Cause** Synchronous cross-service calls on the request path where an asynchronous local projection would do.
+- **Fix** After extraction, prefer a local projection fed by the provider's integration events over a synchronous [[Open-Host Service]] call across the network.
+- **See also** [[Chatty Service Communication]], [[Eventual Consistency]]
 
 ### Leaky Abstraction
 Abstraction exposing implementation details to consumers.

@@ -97,6 +97,11 @@ See [README — Contract testing](../README.md#contract-testing).
   - Validate envelope (`type`, `dataschema`, `source`, `id`) and payload independently.
   - Producers cannot publish events that fail compatibility check.
 
+### Cross-context Open-Host Service
+
+- **In the modulith:** a cross-context call is an in-process CDI call into the provider's `application.port.in`; it needs no contract test — the compiler and ArchUnit already bind consumer and provider to the same interface.
+- **After extraction:** the boundary becomes REST and is covered by the provider and consumer contract tests above (whole `application.port.in` granularity — the same front door, no per-use-case contract). See [README — Cross-context integration](../README.md#cross-context-integration).
+
 Shared contract test utilities live in `shared.contract`.
 
 ## End-to-end tests

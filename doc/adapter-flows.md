@@ -247,6 +247,30 @@ Redis
 ```
 Cache is read-through or write-aside per use case. Invalidation triggered by domain events for the relevant aggregate; cache is never source of truth.
 
+### 10. Cross-context read (Open-Host Service)
+
+How a context obtains data owned by another context: by calling that context's published inbound API, never by reaching into its internals. The consumer injects the provider's query use case in `application.port.in` — the same one the provider's REST adapter drives — and receives a projection DTO. It never touches the provider's domain, outbound ports, infrastructure, or tables.
+
+```
+Consumer handler [tx] (application.service, consumer BC)
+  ▼
+Provider <X>Query use case (provider application.port.in.query)
+  ── modulith: in-process CDI call to the provider's query handler
+  │      ▼
+  │   Provider <X>QueryHandler [tx, readOnly]
+  │      └─ (continues as flow #2 inside the provider context)
+  └── extracted: same port, implemented by a REST client adapter
+         (consumer infrastructure.adapter.out.client.rest)
+  ▼
+Consumer handler receives projection DTO (never a provider aggregate or entity)
+```
+Rules and notes.
+- The cross-context edge is permitted only into the provider's `application.port.in`; ArchUnit fails every other cross-context dependency (see [README — Enforcement](../README.md#enforcement) rule 5).
+- We inject the provider's inbound port directly, for simplicity. Purists may front it with a consumer-owned outbound port and an anti-corruption layer — see [README — Cross-context integration](../README.md#cross-context-integration).
+- On extraction the port is unchanged — only the implementation swaps from an in-process CDI bean to a REST client.
+- Cross-context consistency is eventual. State changes never propagate by a synchronous command into another context inside the caller's transaction; those go through integration events (flow #3 inbound, flow #7 outbound).
+- Once extracted, prefer a local projection fed by the provider's integration events (flow #7 on the provider side) over this synchronous call. A synchronous call across the network couples the services at runtime and availability — a distributed monolith. Reserve it for reads whose freshness genuinely requires it.
+
 ---
 
 ## Cross-cutting concerns (applied to every flow)
