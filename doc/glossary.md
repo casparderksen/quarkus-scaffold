@@ -665,6 +665,35 @@ Distributed transaction pattern coordinating local transactions via events or co
 
 - **Why** Replaces distributed ACID transactions.
 - **Variants** Orchestration-based (central coordinator), choreography-based (peer events).
+- **See also** [[Orchestration]], [[Choreography]], [[Process Manager]], [[Compensating Transaction]]
+
+### Choreography
+Saga coordination in which each context reacts to events and emits its own, with no central coordinator.
+
+- **Why** Maximum autonomy; only facts cross context boundaries; a new participant subscribes without changing the others.
+- **Cost** The process definition and compensation logic are distributed across participants; no single place shows the flow or its state.
+- **See also** [[Saga Pattern]], [[Orchestration]]
+
+### Orchestration
+Saga coordination in which a central [[Process Manager]] owns the flow, issuing steps to participants and consuming their outcome events.
+
+- **Why** One visible, testable place holds the flow, its state, and its compensations; supports timeouts, retries, and whole-saga audit.
+- **Cost** A coordination component to build; the orchestrator issues commands across a context boundary — the one sanctioned case of a cross-context command.
+- **See also** [[Saga Pattern]], [[Choreography]], [[Process Manager]]
+
+### Process Manager
+Component that owns the state of one running saga and advances it, reacting to participants' outcome events and issuing the next step or a compensation.
+
+- **Why** Centralizes an orchestrated saga's state machine and failure handling.
+- **Rule** Owns process state only, never a participant's domain data or aggregate; lives in the context that owns the process, or a dedicated coordination context when no single participant does.
+- **See also** [[Orchestration]], [[Saga Pattern]], [[Compensating Transaction]]
+
+### Compensating Transaction
+A local transaction that semantically undoes the effect of a previously committed saga step.
+
+- **Why** A committed local transaction cannot be rolled back; failure is handled by applying an inverse action (release the reservation) rather than reverting.
+- **Note** Idempotent under [[At-least-once Delivery]]; a step that cannot be compensated is ordered last.
+- **See also** [[Saga Pattern]], [[Eventual Consistency]]
 
 ### Eventual Consistency
 State across services converges asynchronously.

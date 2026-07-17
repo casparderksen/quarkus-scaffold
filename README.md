@@ -36,7 +36,8 @@ The structure enables (eventual) extraction of Maven modules or independent serv
 It also supports sharing cross-cutting concerns (shared kernel, infrastructure) across teams.
 
 See [Glossary](doc/glossary.md) for an explanation of concepts, [Adapter Flows](doc/adapter-flows.md) for
-end-to-end call chains per inbound and outbound adapter, [Testing Strategy](doc/testing-strategy.md)
+end-to-end call chains per inbound and outbound adapter, [Cross-Context Integration Flows](doc/cross-context-flows.md)
+for how bounded contexts integrate with one another, [Testing Strategy](doc/testing-strategy.md)
 for testing guidelines supported by this template, and [Extracting to microservices](doc/extracting-microservices.md)
 for turning a bounded context into a separately deployed service.
 
@@ -343,8 +344,8 @@ Migration version numbers form a single global sequence. When adding a migration
 
 Cross-context coupling is forbidden at three levels:
 - **Migrations.** A migration in `db/migration/<context>/` may only touch tables owned by that context.
-- **Data movement.** SQL must not copy or move rows between contexts. Cross-context data flow is implemented as application code using domain events.
-- **References.** Tables in one context must not declare foreign keys to tables in another context, and queries must not join across contexts. A context holds an ID (plain column, no FK constraint) and obtains data across the boundary the same way application code does: by calling the source context's Open-Host Service (its `application.port.in`), or from a local projection built from that context's integration events. See [Cross-context integration](#cross-context-integration).
+- **Data movement.** SQL must not copy or move rows between contexts. Cross-context data flow is implemented as application code — a synchronous Open-Host Service read, or an integration event for a state change — never at the database level.
+- **References.** Tables in one context must not declare foreign keys to tables in another context, and queries must not join across contexts. A context holds an ID (plain column, no FK constraint) and obtains data across the boundary the same way application code does: by a synchronous call to the source context's Open-Host Service (its `application.port.in`). Once that context is extracted to a service, the same boundary may instead be served by a local projection built from its integration events — see [Cross-context integration](#cross-context-integration).
 
 When a bounded context is extracted to a separate service, its migration folder moves with it. The new service runs the same migrations against its own database; the monolith drops the location from its Flyway configuration. See [Extracting to microservices](doc/extracting-microservices.md) for the full procedure.
 
@@ -356,13 +357,15 @@ Scheduled jobs are inbound adapters under `infrastructure.adapter.in.scheduler`.
 
 A bounded context that needs data owned by another context reaches it **only** through that context's Open-Host Service: its inbound published API in `application.port.in` — the same command and query use cases its REST adapter drives. It never touches another context's `domain`, `application.port.out`, `infrastructure`, or database tables; those are private. This is the single permitted cross-context entry point.
 
-In the modular monolith the consumer injects the provider's `application.port.in` interface and the call is an ordinary in-process CDI call. When the provider is later extracted to its own service, the interface is unchanged: a REST client adapter implements the same port and the consumer is unaffected. Routing through the published port rather than reaching into the provider is what lets the integration mechanism change without touching the consumer's application logic.
+A cross-context **read** is a synchronous in-process call: the consumer injects the provider's inbound query port (`application.port.in`) — the same use case the provider's REST adapter drives — and receives a projection DTO. Nothing is copied; the consumer holds no local copy of the provider's data.
 
 We inject the provider's inbound port directly, for simplicity. Purists may instead have the consumer define its own outbound port in its own vocabulary and translate in an [anti-corruption layer](doc/glossary.md) — do that only when the provider's language would otherwise leak into the consumer and cause harm.
 
-Cross-context consistency is eventual. State changes never propagate by a synchronous command into another context inside the caller's transaction; they go through integration events (the inbound and outbox flows). The Open-Host Service is for obtaining data, not for driving another context's writes.
+A cross-context **write** is never a synchronous call. A synchronous cross-context write cannot be both atomic and respect the one-aggregate-per-transaction boundary, so state changes propagate as integration events through the transactional outbox: the initiating context mutates its own aggregate and appends an event in one transaction, and the other context consumes the event and reacts in its own transaction. The producer publishes a fact in its own vocabulary; each consumer translates it into a local command and decides for itself how to react — outside an orchestrated saga, a context does not send another context a command. Consistency between the two is eventual.
 
-Once a context is extracted, prefer building a **local projection fed by the provider's integration events** (CloudEvents) over a synchronous cross-service call. A synchronous call in-process is cheap; the same call across the network couples the two services at runtime and availability — a [distributed monolith](doc/glossary.md). Reserve the synchronous REST client for reads whose freshness genuinely requires it.
+If a context cannot decide correctly without another context's up-to-the-moment state — a single invariant spanning two contexts — the boundary is wrong: move the invariant inside one consistency boundary, or model the agreement as a saga. A synchronous read does not fix it, because eventual data cannot hold an invariant.
+
+The runtime patterns (Foreign Read, Cross-Context Report, Notification, Saga) and the guidance for choosing between them are in [Cross-Context Integration Flows](doc/cross-context-flows.md). What each becomes when a context is deployed separately is in [Extracting to microservices](doc/extracting-microservices.md).
 
 Packages carry no explicit context marker: every top-level package under `org.example` except `shared` is a bounded context and is subject to these rules. There is no unchecked "escape hatch" package.
 
