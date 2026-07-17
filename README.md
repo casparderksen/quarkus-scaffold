@@ -37,9 +37,10 @@ It also supports sharing cross-cutting concerns (shared kernel, infrastructure) 
 
 See [Glossary](doc/glossary.md) for an explanation of concepts, [Adapter Flows](doc/adapter-flows.md) for
 end-to-end call chains per inbound and outbound adapter, [Cross-Context Integration Flows](doc/cross-context-flows.md)
-for how bounded contexts integrate with one another, [Testing Strategy](doc/testing-strategy.md)
-for testing guidelines supported by this template, and [Extracting to microservices](doc/extracting-microservices.md)
-for turning a bounded context into a separately deployed service.
+for how bounded contexts integrate with one another, [Transactional Outbox](doc/transactional_outbox.md) and
+[Idempotent Consumer](doc/idempotent_consumer.md) for the two halves of reliable eventing,
+[Testing Strategy](doc/testing-strategy.md) for testing guidelines supported by this template, and
+[Extracting to microservices](doc/extracting-microservices.md) for turning a bounded context into a separately deployed service.
 
 ### Precedence between styles
 
@@ -298,13 +299,11 @@ HTTP error responses are RFC 9457 Problem Details, serialized by the `quarkus-ht
 
 ### Idempotency
 
-The default approach is business-key idempotency. Aggregates expose a unique business identifier (external order ID, payment reference, etc.) enforced by aggregate invariant, repository lookup, and database unique constraint. Duplicate operations are detected via repository lookup before creation; handlers return the existing aggregate on duplicate input.
-
-Technical idempotency (client-supplied `Idempotency-Key` headers, message-ID dedup for at-least-once delivery) is added per use case only when business-key dedup is insufficient — typically for payment APIs and Kafka consumers without a natural dedup key. When required, it is implemented as a cross-cutting capability with an `IdempotencyStore` port under `shared.application.port.out.idempotency`, an inbound interceptor under `shared.infrastructure.adapter.in.idempotency`, and a JDBC or Redis store implementation under `shared.infrastructure.adapter.out.idempotency`. These packages are added to the tree only when a use case requires the framework; they are not part of the default scaffold.
+Consumers must tolerate at-least-once delivery. The default is business-key idempotency; per-message technical deduplication is added per use case when no natural key exists. See [Idempotent Consumer](doc/idempotent_consumer.md).
 
 ### Eventing
 
-Domain events are emitted from aggregates and captured by the application layer. External publication goes through outbound ports only, implemented by the messaging adapter, with the transactional outbox pattern guaranteeing at-least-once delivery aligned with the source transaction.
+Domain events are emitted from aggregates and captured by the application layer. External publication goes through outbound ports only, implemented by the messaging adapter, with the transactional outbox pattern guaranteeing at-least-once delivery aligned with the source transaction. See [Transactional Outbox](doc/transactional_outbox.md).
 
 **Inbound integration events always map to commands.** The adapter unwraps the envelope, translates external vocabulary to a local command, and invokes a handler. The handler decides what (if anything) happens, loads the aggregate, mutates, and emits its own domain event. Projection updates go through a command handler the same way as state changes — keeping transaction boundary, idempotency, and audit trail consistent.
 
@@ -355,21 +354,9 @@ Scheduled jobs are inbound adapters under `infrastructure.adapter.in.scheduler`.
 
 ### Cross-context integration
 
-A bounded context that needs data owned by another context reaches it **only** through that context's Open-Host Service: its inbound published API in `application.port.in` — the same command and query use cases its REST adapter drives. It never touches another context's `domain`, `application.port.out`, `infrastructure`, or database tables; those are private. This is the single permitted cross-context entry point.
+A bounded context reaches data owned by another context **only** through that context's Open-Host Service — its inbound published API in `application.port.in`, the same command and query use cases its REST adapter drives. It never touches another context's `domain`, `application.port.out`, `infrastructure`, or tables; those are private. Reads are synchronous Open-Host Service calls; writes propagate as integration events through the transactional outbox, because a synchronous cross-context write cannot be both atomic and respect the one-aggregate-per-transaction boundary. Every top-level package under `org.example` except `shared` is a bounded context subject to these rules; there is no "escape hatch" package.
 
-A cross-context **read** is a synchronous in-process call: the consumer injects the provider's inbound query port (`application.port.in`) — the same use case the provider's REST adapter drives — and receives a projection DTO. Nothing is copied; the consumer holds no local copy of the provider's data.
-
-We inject the provider's inbound port directly, for simplicity. Purists may instead have the consumer define its own outbound port in its own vocabulary and translate in an [anti-corruption layer](doc/glossary.md) — do that only when the provider's language would otherwise leak into the consumer and cause harm.
-
-A cross-context **write** is never a synchronous call. A synchronous cross-context write cannot be both atomic and respect the one-aggregate-per-transaction boundary, so state changes propagate as integration events through the transactional outbox: the initiating context mutates its own aggregate and appends an event in one transaction, and the other context consumes the event and reacts in its own transaction. The producer publishes a fact in its own vocabulary; each consumer translates it into a local command and decides for itself how to react — outside an orchestrated saga, a context does not send another context a command. Consistency between the two is eventual.
-
-If a context cannot decide correctly without another context's up-to-the-moment state — a single invariant spanning two contexts — the boundary is wrong: move the invariant inside one consistency boundary, or model the agreement as a saga. A synchronous read does not fix it, because eventual data cannot hold an invariant.
-
-The runtime patterns (Foreign Read, Cross-Context Report, Notification, Saga) and the guidance for choosing between them are in [Cross-Context Integration Flows](doc/cross-context-flows.md). What each becomes when a context is deployed separately is in [Extracting to microservices](doc/extracting-microservices.md).
-
-Packages carry no explicit context marker: every top-level package under `org.example` except `shared` is a bounded context and is subject to these rules. There is no unchecked "escape hatch" package.
-
-See [Extracting to microservices](doc/extracting-microservices.md) for the extraction procedure and [Adapter Flows](doc/adapter-flows.md) (flow #10) for the call chain.
+The runtime patterns (Foreign Read, Cross-Context Report, Notification, Saga) and the guidance for choosing between them are in [Cross-Context Integration Flows](doc/cross-context-flows.md). See also [Extracting to microservices](doc/extracting-microservices.md) and [Adapter Flows](doc/adapter-flows.md) (flow #10).
 
 ### Dependency rules
 

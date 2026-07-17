@@ -102,6 +102,7 @@ Because the read model is populated asynchronously, its data is eventually consi
 - Store only the fields the report needs, denormalized for the query shape.
 - Place the read model in the context that owns the report. When the report belongs to no single context, place it in a dedicated reporting context.
 - This scenario is for reads spanning several contexts. A list or report over a single context — even a large one — is an ordinary local query (adapter-flow #2b), not a cross-context concern.
+- A database view is not an alternative to the read model when the report spans contexts: a view over another context's tables is a cross-context join that binds to that context's private structure — forbidden by the same rule that forbids the join, and impossible to keep once the context owns a separate database, so it would not survive extraction. A view or materialized view is fine only within a single context, including over the reporting context's own read-model tables.
 
 *Extraction note:* the read model already exists; at extraction only its event feeds repoint onto the broker. There is no projection-versus-REST choice here — a report is a projection by construction.
 
