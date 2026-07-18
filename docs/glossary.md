@@ -4,28 +4,35 @@ The concepts this project's architecture, design, and testing rest on.
 
 ## Contents
 
-- [Architectural quality](#architectural-quality)
-- [Domain-Driven Design](#domain-driven-design)
-- [Layered architecture](#layered-architecture)
-- [Hexagonal architecture](#hexagonal-architecture)
-- [Clean Architecture](#clean-architecture)
-- [CQRS](#cqrs)
-- [Persistence](#persistence)
-- [Error model](#error-model)
-- [Eventing and messaging](#eventing-and-messaging)
-- [Integration](#integration)
-- [Resilience](#resilience)
-- [Security](#security)
-- [Observability](#observability)
+- [Foundations](#foundations)
+  - [Architectural quality](#architectural-quality)
+  - [Domain-Driven Design](#domain-driven-design)
+- [Architectural structure](#architectural-structure)
+  - [Layered architecture](#layered-architecture)
+  - [Hexagonal architecture](#hexagonal-architecture)
+  - [Clean Architecture](#clean-architecture)
+  - [CQRS](#cqrs)
+- [Implementation](#implementation)
+  - [Persistence](#persistence)
+  - [Error model](#error-model)
+  - [Eventing and messaging](#eventing-and-messaging)
+  - [Integration](#integration)
+- [Operational concerns](#operational-concerns)
+  - [Resilience](#resilience)
+  - [Security](#security)
+  - [Observability](#observability)
 - [Anti-patterns](#anti-patterns)
-- [Testing — core test types](#testing--core-test-types)
-- [Testing — test doubles](#testing--test-doubles)
-- [Testing — test data](#testing--test-data)
-- [Testing — execution](#testing--execution)
-- [Testing — contract and infrastructure](#testing--contract-and-infrastructure)
-- [Testing — quality](#testing--quality)
+- [Testing](#testing)
+  - [Core test types](#core-test-types)
+  - [Test doubles](#test-doubles)
+  - [Test data](#test-data)
+  - [Execution](#execution)
+  - [Contract and infrastructure](#contract-and-infrastructure)
+  - [Quality](#quality)
 
-## Architectural quality
+## Foundations
+
+### Architectural quality
 
 - [Cohesion](glossary/cohesion.md)
 - [Coupling](glossary/coupling.md)
@@ -37,7 +44,7 @@ The concepts this project's architecture, design, and testing rest on.
 - [Separation of Concerns](glossary/separation-of-concerns.md)
 - [Single Responsibility Principle (SRP)](glossary/single-responsibility-principle.md)
 
-## Domain-Driven Design
+### Domain-Driven Design
 
 - [Aggregate](glossary/aggregate.md)
 - [Aggregate Root](glossary/aggregate-root.md)
@@ -62,14 +69,16 @@ The concepts this project's architecture, design, and testing rest on.
 - [Upstream / Downstream Context](glossary/upstream-downstream-context.md)
 - [Value Object](glossary/value-object.md)
 
-## Layered architecture
+## Architectural structure
+
+### Layered architecture
 
 - [Application Layer](glossary/application-layer.md)
 - [Domain Layer](glossary/domain-layer.md)
 - [Infrastructure Layer](glossary/infrastructure-layer.md)
 - [Layered Architecture](glossary/layered-architecture.md)
 
-## Hexagonal architecture
+### Hexagonal architecture
 
 - [Adapter](glossary/adapter.md)
 - [Application Core](glossary/application-core.md)
@@ -87,7 +96,7 @@ The concepts this project's architecture, design, and testing rest on.
 - [Persistence Adapter](glossary/persistence-adapter.md)
 - [Port](glossary/port.md)
 
-## Clean Architecture
+### Clean Architecture
 
 - [Clean Architecture](glossary/clean-architecture.md)
 - [Configuration Mapping](glossary/configuration-mapping.md)
@@ -101,7 +110,7 @@ The concepts this project's architecture, design, and testing rest on.
 - [Validation](glossary/validation.md)
 - [Wire DTO](glossary/wire-dto.md)
 
-## CQRS
+### CQRS
 
 - [CQRS (Command Query Responsibility Segregation)](glossary/cqrs.md)
 - [CQRS-lite](glossary/cqrs-lite.md)
@@ -115,7 +124,9 @@ The concepts this project's architecture, design, and testing rest on.
 - [Read Path](glossary/read-path.md)
 - [Write Path](glossary/write-path.md)
 
-## Persistence
+## Implementation
+
+### Persistence
 
 - [Detached Entity](glossary/detached-entity.md)
 - [Dirty Checking](glossary/dirty-checking.md)
@@ -125,7 +136,7 @@ The concepts this project's architecture, design, and testing rest on.
 - [Open-Session-In-View (OSIV)](glossary/open-session-in-view.md)
 - [Persistence Context](glossary/persistence-context.md)
 
-## Error model
+### Error model
 
 - [Correlation ID](glossary/correlation-id.md)
 - [Domain Exception](glossary/domain-exception.md)
@@ -133,7 +144,7 @@ The concepts this project's architecture, design, and testing rest on.
 - [RFC 9457 Problem Details](glossary/rfc-9457-problem-details.md)
 - [Status Code Policy](glossary/status-code-policy.md)
 
-## Eventing and messaging
+### Eventing and messaging
 
 - [At-least-once Delivery](glossary/at-least-once-delivery.md)
 - [Backward Compatibility](glossary/backward-compatibility.md)
@@ -154,7 +165,7 @@ The concepts this project's architecture, design, and testing rest on.
 - [Technical Idempotency](glossary/technical-idempotency.md)
 - [Transactional Outbox](glossary/transactional-outbox.md)
 
-## Integration
+### Integration
 
 - [API Gateway](glossary/api-gateway.md)
 - [AsyncAPI](glossary/asyncapi.md)
@@ -175,14 +186,16 @@ The concepts this project's architecture, design, and testing rest on.
 - [Service Discovery](glossary/service-discovery.md)
 - [XML](glossary/xml.md)
 
-## Resilience
+## Operational concerns
+
+### Resilience
 
 - [Bulkhead Pattern](glossary/bulkhead-pattern.md)
 - [Circuit Breaker](glossary/circuit-breaker.md)
 - [Retry Policy](glossary/retry-policy.md)
 - [Timeout Pattern](glossary/timeout-pattern.md)
 
-## Security
+### Security
 
 - [ABAC (Attribute-Based Access Control)](glossary/abac.md)
 - [Authentication](glossary/authentication.md)
@@ -200,7 +213,7 @@ The concepts this project's architecture, design, and testing rest on.
 - [RBAC (Role-Based Access Control)](glossary/rbac.md)
 - [Zero Trust](glossary/zero-trust.md)
 
-## Observability
+### Observability
 
 - [Distributed Tracing](glossary/distributed-tracing.md)
 - [Health Check](glossary/health-check.md)
@@ -229,7 +242,9 @@ The concepts this project's architecture, design, and testing rest on.
 - [Transaction Script](glossary/transaction-script.md)
 - [Vendor Lock-In](glossary/vendor-lock-in.md)
 
-## Testing — core test types
+## Testing
+
+### Core test types
 
 - [Acceptance Test](glossary/acceptance-test.md)
 - [Architecture Test](glossary/architecture-test.md)
@@ -243,7 +258,7 @@ The concepts this project's architecture, design, and testing rest on.
 - [Snapshot Test](glossary/snapshot-test.md)
 - [Unit Test](glossary/unit-test.md)
 
-## Testing — test doubles
+### Test doubles
 
 - [Dummy](glossary/dummy.md)
 - [Fake](glossary/fake.md)
@@ -252,7 +267,7 @@ The concepts this project's architecture, design, and testing rest on.
 - [Stub](glossary/stub.md)
 - [Test Double](glossary/test-double.md)
 
-## Testing — test data
+### Test data
 
 - [Factory (Test Factory)](glossary/test-factory.md)
 - [Fixture](glossary/fixture.md)
@@ -262,7 +277,7 @@ The concepts this project's architecture, design, and testing rest on.
 - [Seed Data](glossary/seed-data.md)
 - [Test Data Builder](glossary/test-data-builder.md)
 
-## Testing — execution
+### Execution
 
 - [Assertion](glossary/assertion.md)
 - [Flaky Test](glossary/flaky-test.md)
@@ -273,7 +288,7 @@ The concepts this project's architecture, design, and testing rest on.
 - [Test Case](glossary/test-case.md)
 - [Test Suite](glossary/test-suite.md)
 
-## Testing — contract and infrastructure
+### Contract and infrastructure
 
 - [Consumer-Driven Contract](glossary/consumer-driven-contract.md)
 - [Embedded Database](glossary/embedded-database.md)
@@ -283,7 +298,7 @@ The concepts this project's architecture, design, and testing rest on.
 - [Testcontainers](glossary/testcontainers.md)
 - [WireMock](glossary/wiremock.md)
 
-## Testing — quality
+### Quality
 
 - [Chaos Test](glossary/chaos-test.md)
 - [Code Coverage](glossary/code-coverage.md)
