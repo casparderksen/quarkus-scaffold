@@ -26,11 +26,18 @@ Template for Quarkus applications.
 
 ### Design principles
 
-The application is structured according to Hexagonal / DDD / Clean Architecture concepts.
-- DDD strategic design: bounded contexts, aggregates, repositories
-- Hexagonal architecture: ports and adapters
-- Clean architecture: use cases, dependency flow, and infrastructure isolation
-- CQRS-lite separation (command/query): use for read-heavy UI pages and reports
+The application combines DDD, hexagonal architecture, clean architecture, and CQRS. When the styles conflict, the order of precedence is:
+
+1. **DDD** — for strategic and tactical modeling (bounded contexts, aggregates, repositories, ubiquitous language).
+2. **Hexagonal** — for the dependency structure between the domain and the outside world (ports and adapters).
+3. **Clean Architecture** — for the dependency rule (outside-in only) and for the role separation within the application layer (use cases as explicit handlers).
+4. **CQRS** — for the command/query split and handler granularity (one command/query = one handler). Yields to DDD on the write model. See [Application service style: Vernon vs CQRS](#application-service-style-vernon-vs-cqrs).
+
+Concrete consequences:
+- Repository interfaces live in `domain.repository`, following DDD, not in the use-case layer as Clean Architecture would place them.
+- DTOs are owned by the layer that introduces the transport mismatch (adapter for wire formats, application for use-case input/output), following hexagonal port boundaries rather than Clean Architecture's universal "boundary objects".
+- Application services are named after use cases (`<Verb><Noun>Handler`), following the Clean Architecture convention, but their dependency on the domain follows DDD's aggregate-centric model.
+- The query path reads the write side's own tables through read-only projections (CQRS-lite); there is no separately maintained read store, so aggregates stay the single source of truth. Full CQRS keeps a separate read-optimized model in sync.
 
 The structure enables (eventual) extraction of Maven modules or independent services from a modular monolith.
 It also supports sharing cross-cutting concerns (shared kernel, infrastructure) across teams.
@@ -42,18 +49,22 @@ for how bounded contexts integrate with one another, [Transactional Outbox](doc/
 [Testing Strategy](doc/testing-strategy.md) for testing guidelines supported by this template, and
 [Extracting to microservices](doc/extracting-microservices.md) for turning a bounded context into a separately deployed service.
 
-### Precedence between styles
+### Application service style: Vernon vs CQRS
 
-This template combines hexagonal architecture, DDD, and clean architecture. When the styles conflict, the order of precedence is:
+The application layer follows the CQRS command-handler style, not Vaughn Vernon's classic Application Service style. The two are both valid DDD; they differ in granularity and vocabulary.
 
-1. **DDD** — for strategic and tactical modeling (bounded contexts, aggregates, repositories, ubiquitous language).
-2. **Hexagonal** — for the dependency structure between the domain and the outside world (ports and adapters).
-3. **Clean Architecture** — for the dependency rule (outside-in only) and for the role separation within the application layer (use cases as explicit handlers).
+**Vernon's style** (*Implementing Domain-Driven Design*): one Application Service per aggregate, with a method per use case — `OrderApplicationService.placeOrder(...)`, `.cancelOrder(...)`. The service is a thin façade that controls the transaction, coordinates domain objects, and calls repositories, holding no business logic. Suffix `ApplicationService`.
 
-Concrete consequences:
-- Repository interfaces live in `domain.repository`, following DDD, not in the use-case layer as Clean Architecture would place them.
-- DTOs are owned by the layer that introduces the transport mismatch (adapter for wire formats, application for use-case input/output), following hexagonal port boundaries rather than Clean Architecture's universal "boundary objects".
-- Application services are named after use cases (`<Verb><Noun>Handler`), following the Clean Architecture convention, but their dependency on the domain follows DDD's aggregate-centric model.
+**This template's style** (CQRS): one handler class per command or query — `PlaceOrderHandler`, `CancelOrderHandler`. Each pairs with an explicit command/query contract in `application.port.in`. This is the refinement Vernon acknowledges for the CQRS and messaging cases; here it is the default, not the exception.
+
+Why the CQRS leaning:
+- **Single responsibility.** One command = one handler keeps each use case isolated, independently testable, and free of unrelated dependencies.
+- **Explicit contracts.** The `application.port.in.command` / `application.port.in.query` split makes the write and read surfaces first-class, matching the CQRS-lite separation and the Open-Host Service boundary other contexts call into.
+- **Bus-ready.** A handler-per-command maps directly onto a command bus or an inbound messaging adapter dispatching a command, which is how integration events enter the system.
+
+The trade-off is more classes than Vernon's grouped services; when to accept the grouped style instead is covered under [What can be relaxed](#what-can-be-relaxed).
+
+Regardless of style, a **domain service** (`domain.service`) is a different thing: a pure cross-aggregate business rule with no repository, transaction, or port access. An application service that loads repositories and coordinates a use case — even one named `OrderService` in some texts — belongs in `application.service`, not `domain.service`.
 
 ### Guidelines for use
 
@@ -73,22 +84,19 @@ It can be relaxed for CRUD-heavy services, prototypes, or small and stable domai
 #### What can be relaxed
 
 - CQRS separation (command/query split) can be skipped for simple CRUD domains.
+- Handler-per-command can collapse into a Vernon-style `ApplicationService` (method-per-use-case) for CRUD-heavy or small, stable domains, relaxing the one-command-one-handler rule; the orchestration role stays the same, only granularity changes.
 - The policy package can be merged into domain service in small domains.
 - Projection DTOs can be flattened into use cases or inlined where defined.
 - Test slicing (unit/integration/contract separation) can be simplified in early phases.
 - Shared kernel can be ignored entirely in single bounded context systems.
-
-### Coding agents
-
-[CLAUDE.md](CLAUDE.md) (or `AGENTS.md`) is not documentation; it specifies constraints for preventing structurally
-plausible but architecturally invalid code. Everything obvious or inferable from the codebase should be left out.
+- One-aggregate-per-transaction can be broken for a justified exception (Vernon's eventual-consistency rule of aggregate design): a real invariant spanning aggregates, low contention, and no acceptable eventual-consistency path. This is the exception, not the default; the transactional outbox and eventual cross-aggregate consistency remain the norm.
 
 ### Aggregate boundaries
 
 Aggregates define the consistency boundary. The following rules apply.
 
 - **One aggregate per transaction.** A command modifies exactly one aggregate. Cross-aggregate consistency is eventual, achieved through domain events and downstream handlers.
-- **References by ID.** An aggregate references other aggregates by their identifier (`OrderId`, `CustomerId`), never by direct object reference. No ORM association links aggregate roots.
+- **References by ID.** An aggregate references other aggregates by their identifier (`OrderId`, `CustomerId`), never by direct object reference. No ORM association links aggregate roots. This is an object-model rule, not a schema rule: intra-context foreign keys are still permitted; cross-context ones are not (see [Database migrations](#database-migrations)).
 - **Aggregate contains only invariant-bearing data.** Fields that exist only for display belong in projections, not in the aggregate.
 - **Root owns child lifecycle.** Child entities are created, modified, and deleted through the aggregate root. Repositories exist only for aggregate roots, never for child entities.
 
@@ -368,6 +376,11 @@ All dependencies must follow a strict outside-in direction:
 - `infrastructure` may depend on `application` and `domain`
 - `infrastructure.adapter.in` depends only on `application.port.in`
 - `infrastructure.adapter.out` depends only on `application.port.out` and `domain`
+
+### Coding agents
+
+[CLAUDE.md](CLAUDE.md) (or `AGENTS.md`) is not documentation; it specifies constraints for preventing structurally
+plausible but architecturally invalid code. Everything obvious or inferable from the codebase should be left out.
 
 ### Enforcement
 
