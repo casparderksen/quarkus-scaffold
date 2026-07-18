@@ -1,14 +1,29 @@
 # Glossary
 
-Each term has its own page under [`glossary/`](glossary/). A page opens with
-a one-sentence definition, then expands it in prose under a consistent set of
-sections — why the concept exists, when to reach for it, an example, its
-rules, contrasts with adjacent terms, and related entries — omitting any
-section that does not apply. Terms are defined once; synonyms redirect to the
-canonical page.
+The concepts this project's architecture, design, and testing rest on.
 
-Entries below are grouped by topic and listed alphabetically within each
-group.
+## Contents
+
+- [Architectural quality](#architectural-quality)
+- [Domain-Driven Design](#domain-driven-design)
+- [Layered architecture](#layered-architecture)
+- [Hexagonal architecture](#hexagonal-architecture)
+- [Clean Architecture](#clean-architecture)
+- [CQRS](#cqrs)
+- [Persistence](#persistence)
+- [Error model](#error-model)
+- [Eventing and messaging](#eventing-and-messaging)
+- [Integration](#integration)
+- [Resilience](#resilience)
+- [Security](#security)
+- [Observability](#observability)
+- [Anti-patterns](#anti-patterns)
+- [Testing — core test types](#testing--core-test-types)
+- [Testing — test doubles](#testing--test-doubles)
+- [Testing — test data](#testing--test-data)
+- [Testing — execution](#testing--execution)
+- [Testing — contract and infrastructure](#testing--contract-and-infrastructure)
+- [Testing — quality](#testing--quality)
 
 ## Architectural quality
 
