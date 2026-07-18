@@ -49,65 +49,6 @@ for how bounded contexts integrate with one another, [Transactional Outbox](doc/
 [Testing Strategy](doc/testing-strategy.md) for testing guidelines supported by this template, and
 [Extracting to microservices](doc/extracting-microservices.md) for turning a bounded context into a separately deployed service.
 
-### Application service style: Vernon vs CQRS
-
-The application layer follows the CQRS command-handler style, not Vaughn Vernon's classic Application Service style. The two are both valid DDD; they differ in granularity and vocabulary.
-
-**Vernon's style** (*Implementing Domain-Driven Design*): one Application Service per aggregate, with a method per use case — `OrderApplicationService.placeOrder(...)`, `.cancelOrder(...)`. The service is a thin façade that controls the transaction, coordinates domain objects, and calls repositories, holding no business logic. Suffix `ApplicationService`.
-
-**This template's style** (CQRS): one handler class per command or query — `PlaceOrderHandler`, `CancelOrderHandler`. Each pairs with an explicit command/query contract in `application.port.in`. This is the refinement Vernon acknowledges for the CQRS and messaging cases; here it is the default, not the exception.
-
-Why the CQRS leaning:
-- **Single responsibility.** One command = one handler keeps each use case isolated, independently testable, and free of unrelated dependencies.
-- **Explicit contracts.** The `application.port.in.command` / `application.port.in.query` split makes the write and read surfaces first-class, matching the CQRS-lite separation and the Open-Host Service boundary other contexts call into.
-- **Bus-ready.** A handler-per-command maps directly onto a command bus or an inbound messaging adapter dispatching a command, which is how integration events enter the system.
-
-The trade-off is more classes than Vernon's grouped services; when to accept the grouped style instead is covered under [What can be relaxed](#what-can-be-relaxed).
-
-Regardless of style, a **domain service** (`domain.service`) is a different thing: a pure cross-aggregate business rule with no repository, transaction, or port access. An application service that loads repositories and coordinates a use case — even one named `OrderService` in some texts — belongs in `application.service`, not `domain.service`.
-
-### Guidelines for use
-
-Use this architecture when the system has non-trivial domain rules.
-It can be relaxed for CRUD-heavy services, prototypes, or small and stable domains.
-
-#### Mandatory baseline
-
-- Use bounded-context packages to prevent cross-domain coupling.
-- Keep aggregates as the consistency boundary; enforce invariants inside them.
-- Separation of `domain`, `application`, `infrastructure`, dependencies outside-in.
-- Application layer only orchestrates and owns transactions, not core business rules.
-- Define ports explicitly for all external dependencies (DB, messaging, external APIs, SDKs).
-- Keep shared kernel minimal and stable.
-- Architecture rules are enforced by ArchUnit tests (see [Enforcement](#enforcement) below). Rules without a test are aspirational and subject to drift.
-
-#### What can be relaxed
-
-- CQRS separation (command/query split) can be skipped for simple CRUD domains.
-- Handler-per-command can collapse into a Vernon-style `ApplicationService` (method-per-use-case) for CRUD-heavy or small, stable domains, relaxing the one-command-one-handler rule; the orchestration role stays the same, only granularity changes.
-- The policy package can be merged into domain service in small domains.
-- Projection DTOs can be flattened into use cases or inlined where defined.
-- Test slicing (unit/integration/contract separation) can be simplified in early phases.
-- Shared kernel can be ignored entirely in single bounded context systems.
-- One-aggregate-per-transaction can be broken for a justified exception (Vernon's eventual-consistency rule of aggregate design): a real invariant spanning aggregates, low contention, and no acceptable eventual-consistency path. This is the exception, not the default; the transactional outbox and eventual cross-aggregate consistency remain the norm.
-
-### Aggregate boundaries
-
-Aggregates define the consistency boundary. The following rules apply.
-
-- **One aggregate per transaction.** A command modifies exactly one aggregate. Cross-aggregate consistency is eventual, achieved through domain events and downstream handlers.
-- **References by ID.** An aggregate references other aggregates by their identifier (`OrderId`, `CustomerId`), never by direct object reference. No ORM association links aggregate roots. This is an object-model rule, not a schema rule: intra-context foreign keys are still permitted; cross-context ones are not (see [Database migrations](#database-migrations)).
-- **Aggregate contains only invariant-bearing data.** Fields that exist only for display belong in projections, not in the aggregate.
-- **Root owns child lifecycle.** Child entities are created, modified, and deleted through the aggregate root. Repositories exist only for aggregate roots, never for child entities.
-
-Practical warning signs that an aggregate is the wrong size:
-- Unbounded collections inside an aggregate (every order ever placed by a customer).
-- More than a handful of entities inside one aggregate.
-- Loading the aggregate to use only a small unrelated subset.
-- Single-entity aggregates with no invariants beyond field nullability.
-
-When boundaries are wrong, the fix is either to split the aggregate, move display-only fields to a projection, or merge a too-small aggregate into the one that owns its invariants.
-
 ### Package structure
 
 **Main package structure (`src/main/java`):**
@@ -229,6 +170,34 @@ db/migration
 └── shared/                           # Shared kernel tables (outbox, idempotency)
 ```
 
+### Dependency rules
+
+All dependencies must follow a strict outside-in direction:
+- `domain` must not depend on `application` or `infrastructure`
+- `application` may depend only on `domain`
+- `application` must not depend on `infrastructure`
+- `application.service` depends only on `domain` and `application.port`
+- `infrastructure` may depend on `application` and `domain`
+- `infrastructure.adapter.in` depends only on `application.port.in`
+- `infrastructure.adapter.out` depends only on `application.port.out` and `domain`
+
+### Aggregate boundaries
+
+Aggregates define the consistency boundary. The following rules apply.
+
+- **One aggregate per transaction.** A command modifies exactly one aggregate. Cross-aggregate consistency is eventual, achieved through domain events and downstream handlers.
+- **References by ID.** An aggregate references other aggregates by their identifier (`OrderId`, `CustomerId`), never by direct object reference. No ORM association links aggregate roots. This is an object-model rule, not a schema rule: intra-context foreign keys are still permitted; cross-context ones are not (see [Database migrations](#database-migrations)).
+- **Aggregate contains only invariant-bearing data.** Fields that exist only for display belong in projections, not in the aggregate.
+- **Root owns child lifecycle.** Child entities are created, modified, and deleted through the aggregate root. Repositories exist only for aggregate roots, never for child entities.
+
+Practical warning signs that an aggregate is the wrong size:
+- Unbounded collections inside an aggregate (every order ever placed by a customer).
+- More than a handful of entities inside one aggregate.
+- Loading the aggregate to use only a small unrelated subset.
+- Single-entity aggregates with no invariants beyond field nullability.
+
+When boundaries are wrong, the fix is either to split the aggregate, move display-only fields to a projection, or merge a too-small aggregate into the one that owns its invariants.
+
 ### Pragmatic Exception: JPA in the Domain Model
 
 The domain model should be framework-free and agnostic of persistence technology.
@@ -242,6 +211,23 @@ Use queries and projections when you don't need aggregate behavior or transactio
 typically for read-heavy use cases like lists, search, and reporting. In those cases, bypass entities entirely and
 return DTOs via JPQL, native queries, or dedicated read models to avoid lazy loading, N+1 queries, and unnecessary
 entity hydration. Command paths use entities; query paths use projections.
+
+### Application service style: Vernon vs CQRS
+
+The application layer follows the CQRS command-handler style, not Vaughn Vernon's classic Application Service style. The two are both valid DDD; they differ in granularity and vocabulary.
+
+**Vernon's style** (*Implementing Domain-Driven Design*): one Application Service per aggregate, with a method per use case — `OrderApplicationService.placeOrder(...)`, `.cancelOrder(...)`. The service is a thin façade that controls the transaction, coordinates domain objects, and calls repositories, holding no business logic. Suffix `ApplicationService`.
+
+**This template's style** (CQRS): one handler class per command or query — `PlaceOrderHandler`, `CancelOrderHandler`. Each pairs with an explicit command/query contract in `application.port.in`. This is the refinement Vernon acknowledges for the CQRS and messaging cases; here it is the default, not the exception.
+
+Why the CQRS leaning:
+- **Single responsibility.** One command = one handler keeps each use case isolated, independently testable, and free of unrelated dependencies.
+- **Explicit contracts.** The `application.port.in.command` / `application.port.in.query` split makes the write and read surfaces first-class, matching the CQRS-lite separation and the Open-Host Service boundary other contexts call into.
+- **Bus-ready.** A handler-per-command maps directly onto a command bus or an inbound messaging adapter dispatching a command, which is how integration events enter the system.
+
+The trade-off is more classes than Vernon's grouped services; when to accept the grouped style instead is covered under [What can be relaxed](#what-can-be-relaxed).
+
+Regardless of style, a **domain service** (`domain.service`) is a different thing: a pure cross-aggregate business rule with no repository, transaction, or port access. An application service that loads repositories and coordinates a use case — even one named `OrderService` in some texts — belongs in `application.service`, not `domain.service`.
 
 ### Handler return contract
 
@@ -305,10 +291,6 @@ HTTP error responses are RFC 9457 Problem Details, serialized by the `quarkus-ht
 
 **Unhandled exceptions return generic 500.** No stack trace, class name, or message reaches the client. Server-side log retains full detail, joined via the correlation ID included in every Problem Detail (`correlationId` extension field and response header).
 
-### Idempotency
-
-Consumers must tolerate at-least-once delivery. The default is business-key idempotency; per-message technical deduplication is added per use case when no natural key exists. See [Idempotent Consumer](doc/idempotent_consumer.md).
-
 ### Eventing
 
 Domain events are emitted from aggregates and captured by the application layer. External publication goes through outbound ports only, implemented by the messaging adapter, with the transactional outbox pattern guaranteeing at-least-once delivery aligned with the source transaction. See [Transactional Outbox](doc/transactional_outbox.md).
@@ -333,6 +315,20 @@ Events crossing bounded-context or service boundaries are contracts and must be 
 
 **Ownership.** Domain events emitted from aggregates are internal types and carry no version. The outbound messaging adapter translates them to versioned external event contracts; the mapping between internal domain event and external event version lives in the adapter and isolates the domain from versioning concerns.
 
+### Idempotency
+
+Consumers must tolerate at-least-once delivery. The default is business-key idempotency; per-message technical deduplication is added per use case when no natural key exists. See [Idempotent Consumer](doc/idempotent_consumer.md).
+
+### Cross-context integration
+
+Every top-level package under `org.example` except `shared` is a bounded context bound by the rules in this section; there is no `common` or `util` catch-all exempt from them. A bounded context reaches data owned by another context **only** through that context's Open-Host Service — its inbound published API in `application.port.in`, the same command and query use cases its REST adapter drives. It never touches another context's `domain`, `application.port.out`, `infrastructure`, or tables; those are private. Reads are synchronous Open-Host Service calls; writes propagate as integration events through the transactional outbox, because a synchronous cross-context write cannot be both atomic and respect the one-aggregate-per-transaction boundary.
+
+The interaction patterns (Foreign Read, Cross-Context Report, Notification, Saga) and the guidance for choosing between them are in [Cross-Context Integration Flows](doc/cross-context-flows.md). See also [Extracting to microservices](doc/extracting-microservices.md) and [Adapter Flows](doc/adapter-flows.md).
+
+### Scheduled jobs
+
+Scheduled jobs are inbound adapters under `infrastructure.adapter.in.scheduler`. The job method extracts arguments (time window, batch size) and invokes a command or query handler. Domain logic, transactions, and direct repository access do not appear in the job class.
+
 ### Contract testing
 
 Contracts are provider-driven and schema-first. The provider's OpenAPI specification is the authoritative contract.
@@ -356,26 +352,30 @@ Cross-context coupling is forbidden at three levels:
 
 When a bounded context is extracted to a separate service, its migration folder moves with it. The new service runs the same migrations against its own database; the monolith drops the location from its Flyway configuration. See [Extracting to microservices](doc/extracting-microservices.md) for the full procedure.
 
-### Scheduled jobs
+### Guidelines for use
 
-Scheduled jobs are inbound adapters under `infrastructure.adapter.in.scheduler`. The job method extracts arguments (time window, batch size) and invokes a command or query handler. Domain logic, transactions, and direct repository access do not appear in the job class.
+Use this architecture when the system has non-trivial domain rules.
+It can be relaxed for CRUD-heavy services, prototypes, or small and stable domains.
 
-### Cross-context integration
+#### Mandatory baseline
 
-A bounded context reaches data owned by another context **only** through that context's Open-Host Service — its inbound published API in `application.port.in`, the same command and query use cases its REST adapter drives. It never touches another context's `domain`, `application.port.out`, `infrastructure`, or tables; those are private. Reads are synchronous Open-Host Service calls; writes propagate as integration events through the transactional outbox, because a synchronous cross-context write cannot be both atomic and respect the one-aggregate-per-transaction boundary. Every top-level package under `org.example` except `shared` is a bounded context subject to these rules; there is no "escape hatch" package.
+- Use bounded-context packages to prevent cross-domain coupling.
+- Keep aggregates as the consistency boundary; enforce invariants inside them.
+- Separation of `domain`, `application`, `infrastructure`, dependencies outside-in.
+- Application layer only orchestrates and owns transactions, not core business rules.
+- Define ports explicitly for all external dependencies (DB, messaging, external APIs, SDKs).
+- Keep shared kernel minimal and stable.
+- Architecture rules are enforced by ArchUnit tests (see [Enforcement](#enforcement) below). Rules without a test are aspirational and subject to drift.
 
-The runtime patterns (Foreign Read, Cross-Context Report, Notification, Saga) and the guidance for choosing between them are in [Cross-Context Integration Flows](doc/cross-context-flows.md). See also [Extracting to microservices](doc/extracting-microservices.md) and [Adapter Flows](doc/adapter-flows.md) (flow #10).
+#### What can be relaxed
 
-### Dependency rules
-
-All dependencies must follow a strict outside-in direction:
-- `domain` must not depend on `application` or `infrastructure`
-- `application` may depend only on `domain`
-- `application` must not depend on `infrastructure`
-- `application.service` depends only on `domain` and `application.port`
-- `infrastructure` may depend on `application` and `domain`
-- `infrastructure.adapter.in` depends only on `application.port.in`
-- `infrastructure.adapter.out` depends only on `application.port.out` and `domain`
+- CQRS separation (command/query split) can be skipped for simple CRUD domains.
+- Handler-per-command can collapse into a Vernon-style `ApplicationService` (method-per-use-case) for CRUD-heavy or small, stable domains, relaxing the one-command-one-handler rule; the orchestration role stays the same, only granularity changes.
+- The policy package can be merged into domain service in small domains.
+- Projection DTOs can be flattened into use cases or inlined where defined.
+- Test slicing (unit/integration/contract separation) can be simplified in early phases.
+- Shared kernel can be ignored entirely in single bounded context systems.
+- One-aggregate-per-transaction can be broken for a justified exception (Vernon's eventual-consistency rule of aggregate design): a real invariant spanning aggregates, low contention, and no acceptable eventual-consistency path. This is the exception, not the default; the transactional outbox and eventual cross-aggregate consistency remain the norm.
 
 ### Coding agents
 

@@ -1,6 +1,6 @@
 # Extracting a Bounded Context to a Microservice
 
-The scaffold is a modular monolith whose bounded contexts are isolated by package, ownership, and the Open-Host Service boundary. Inside the monolith the contexts already integrate in two ways: a cross-context **read** is a synchronous in-process call through the provider's `application.port.in`, and a cross-context **write** propagates as an integration event through the transactional outbox, consumed in-process by the other context. These runtime patterns and the rules behind them are described in [Cross-Context Integration Flows](cross-context-flows.md).
+The scaffold is a modular monolith whose bounded contexts are isolated by package, ownership, and the Open-Host Service boundary. Inside the monolith the contexts already integrate in two ways: a cross-context **read** is a synchronous in-process call through the provider's `application.port.in`, and a cross-context **write** propagates as an integration event through the transactional outbox, consumed in-process by the other context. These interaction patterns and the rules behind them are described in [Cross-Context Integration Flows](cross-context-flows.md).
 
 Extraction deploys one context as its own service. It leaves the inbound port interfaces untouched and changes only the *mechanism* behind each cross-context boundary. This document is the procedure; the rules it relies on live in [README — Cross-context integration](../README.md#cross-context-integration).
 

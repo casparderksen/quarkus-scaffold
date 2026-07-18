@@ -9,7 +9,7 @@ Each entry uses a fixed shape:
 - **Contrast** — adjacent concepts and how they differ.
 - **See also** — related entries.
 
-Slots are omitted when not applicable. Terms are defined once; duplicates redirect via `See [[X]]`.
+Slots are omitted when not applicable. Terms are defined once; duplicates redirect via `See [X](#x)`.
 
 ---
 
@@ -19,60 +19,60 @@ Slots are omitted when not applicable. Terms are defined once; duplicates redire
 Division of responsibilities into distinct components or layers.
 
 - **Why** Reduces coupling and complexity; isolates change.
-- **See also** [[Coupling]], [[Cohesion]], [[Single Responsibility Principle]]
+- **See also** [Coupling](#coupling), [Cohesion](#cohesion), [Single Responsibility Principle](#single-responsibility-principle-srp)
 
 ### Coupling
 Degree of interdependence between components.
 
 - **Why** Lower coupling improves maintainability, testability, reusability; limits ripple effect of changes.
 - **How** Achieved via information hiding, interfaces, dependency inversion.
-- **See also** [[Cohesion]], [[Dependency Inversion]], [[Information Hiding]]
+- **See also** [Cohesion](#cohesion), [Dependency Inversion](#dependency-inversion), [Information Hiding](#information-hiding)
 
 ### Cohesion
 Degree to which responsibilities within a component belong together.
 
 - **Why** High cohesion improves clarity, maintainability, testability, reusability.
 - **How** Achieved via encapsulation and SRP.
-- **See also** [[Single Responsibility Principle]], [[Encapsulation]]
+- **See also** [Single Responsibility Principle](#single-responsibility-principle-srp), [Encapsulation](#encapsulation)
 
 ### Encapsulation
 Bundling data and behavior into one cohesive unit.
 
 - **Why** Enforces information hiding and separation of concerns.
-- **See also** [[Information Hiding]], [[Cohesion]]
+- **See also** [Information Hiding](#information-hiding), [Cohesion](#cohesion)
 
 ### Information Hiding
 Hiding internal implementation details from the outside world.
 
 - **Why** Keeps interfaces clean; reduces coupling.
-- **See also** [[Encapsulation]], [[Leaky Abstraction]]
+- **See also** [Encapsulation](#encapsulation), [Leaky Abstraction](#leaky-abstraction)
 
 ### Dependency Inversion
 High-level logic depends on abstractions, not implementations.
 
 - **Why** Central to hexagonal architecture; lets domain be tested and re-targeted without touching infrastructure.
 - **Example** Application defines `OrderRepository` interface; JPA adapter implements it.
-- **See also** [[Hexagonal Architecture]], [[Port]], [[Dependency Direction]]
+- **See also** [Hexagonal Architecture](#hexagonal-architecture), [Port](#port), [Dependency Direction](#dependency-direction)
 
 ### Single Responsibility Principle (SRP)
 A unit has only one reason to change.
 
 - **Why** Enforces loose coupling and separation of concerns.
-- **See also** [[Cohesion]], [[Encapsulation]]
+- **See also** [Cohesion](#cohesion), [Encapsulation](#encapsulation)
 
 ### Dependency Direction
 Rule governing allowed compile-time dependencies.
 
 - **Why** Prevents domain or application from depending on transport/persistence concerns.
 - **Rule** Outside-in only: `infrastructure → application → domain`. Never reverse.
-- **See also** [[Clean Architecture]], [[Outside-in Rule]]
+- **See also** [Clean Architecture](#clean-architecture), [Outside-in Rule](#outside-in-rule)
 
 ### Outside-in Rule
 Dependencies point inward toward the domain core.
 
 - **Why** Keeps inner layers framework-free and stable.
 - **Example** REST adapter depends on application port; application port does not know REST exists.
-- **See also** [[Dependency Direction]], [[Clean Architecture]], [[Hexagonal Architecture]]
+- **See also** [Dependency Direction](#dependency-direction), [Clean Architecture](#clean-architecture), [Hexagonal Architecture](#hexagonal-architecture)
 
 ---
 
@@ -82,14 +82,14 @@ Dependencies point inward toward the domain core.
 Architecture separating concerns into logical layers (domain, application, infrastructure).
 
 - **Why** Predictable structure; supports outside-in dependency rule.
-- **See also** [[Hexagonal Architecture]], [[Clean Architecture]]
+- **See also** [Hexagonal Architecture](#hexagonal-architecture), [Clean Architecture](#clean-architecture)
 
 ### Domain Layer
 Core business layer containing domain logic and rules.
 
 - **Why** Independent of frameworks and infrastructure; stable across technology changes.
 - **Contents** Aggregates, entities, value objects, domain services, policies, repositories (interfaces), domain events, domain exceptions.
-- **See also** [[Application Layer]], [[Infrastructure Layer]], [[Domain-Driven Design]]
+- **See also** [Application Layer](#application-layer), [Infrastructure Layer](#infrastructure-layer), [Domain-Driven Design](#domain-driven-design-ddd)
 
 ### Application Layer
 Orchestration layer coordinating use cases and external dependencies.
@@ -97,14 +97,14 @@ Orchestration layer coordinating use cases and external dependencies.
 - **Why** Owns transactions and workflow; keeps domain free of orchestration noise.
 - **Rule** No core business rules; pure coordination.
 - **Contents** Command/query contracts, handlers, outbound ports, projection DTOs.
-- **See also** [[Use Case]], [[Handler]], [[Transaction Boundary]]
+- **See also** [Use Case](#use-case), [Handler](#handler), [Transaction Boundary](#transaction-boundary)
 
 ### Infrastructure Layer
 Technical implementation layer integrating frameworks and external systems.
 
 - **Contents** Adapters (REST, Kafka, JPA, scheduler), configuration.
 - **Rule** Depends on application and domain; never the reverse.
-- **See also** [[Adapter]], [[Outside-in Rule]]
+- **See also** [Adapter](#adapter), [Outside-in Rule](#outside-in-rule)
 
 ---
 
@@ -115,57 +115,57 @@ Architectural style isolating business logic from external systems via ports and
 
 - **Also called** Ports and Adapters.
 - **Why** Enables testing the core without infrastructure; lets technologies be swapped behind stable ports.
-- **See also** [[Port]], [[Adapter]], [[Dependency Inversion]]
+- **See also** [Port](#port), [Adapter](#adapter), [Dependency Inversion](#dependency-inversion)
 
 ### Port
 Abstraction defining communication with the application core.
 
 - **Why** Separates core logic from technical implementation.
-- **Contrast** [[Inbound Port]] = what the application offers; [[Outbound Port]] = what the application needs.
+- **Contrast** [Inbound Port](#inbound-port) = what the application offers; [Outbound Port](#outbound-port) = what the application needs.
 
 ### Inbound Port
 Contract exposing application capabilities to external actors.
 
 - **Example** `CreateOrderHandler` interface invoked by REST resource.
 - **Contrast** Outbound port describes a dependency; inbound describes a capability.
-- **See also** [[Use Case]], [[Command]], [[Query]]
+- **See also** [Use Case](#use-case), [Command](#command), [Query](#query)
 
 ### Outbound Port
 Contract describing a dependency required by the application core.
 
 - **Categories** Persistence (`OrderRepository`), messaging (`OrderEventPublisher`), client (`PaymentServiceClient`), query (`OrderHistoryQueryPort`), cache (`OrderCacheRepository`).
-- **See also** [[Adapter]], [[Dependency Inversion]]
+- **See also** [Adapter](#adapter), [Dependency Inversion](#dependency-inversion)
 
 ### Adapter
 Implementation connecting a port to an external system.
 
 - **Why** Converts between external representation and internal model.
-- **Contrast** [[Inbound Adapter]] drives the application; [[Outbound Adapter]] is driven by it.
+- **Contrast** [Inbound Adapter](#inbound-adapter) drives the application; [Outbound Adapter](#outbound-adapter) is driven by it.
 
 ### Inbound Adapter
 Adapter driving the application (also: driving adapter).
 
 - **Examples** REST controllers, Kafka consumers, scheduled jobs.
 - **Rule** Entrypoint only; no domain logic, no transaction boundary.
-- **See also** [[Driving Adapter]]
+- **See also** [Driving Adapter](#driving-adapter)
 
 ### Outbound Adapter
 Adapter implementing an outbound port (also: driven adapter).
 
 - **Examples** JPA repository, Kafka producer, REST client, Redis cache.
-- **See also** [[Driven Adapter]]
+- **See also** [Driven Adapter](#driven-adapter)
 
 ### Driving Adapter
-See [[Inbound Adapter]].
+See [Inbound Adapter](#inbound-adapter).
 
 ### Driven Adapter
-See [[Outbound Adapter]].
+See [Outbound Adapter](#outbound-adapter).
 
 ### Application Core
 Business-centric part of the system isolated from infrastructure.
 
 - **Contents** Domain and application layers.
-- **See also** [[Hexagonal Architecture]]
+- **See also** [Hexagonal Architecture](#hexagonal-architecture)
 
 ### Boundary
 Separation point between architectural responsibilities.
@@ -208,7 +208,7 @@ Logical boundary within which a domain model is consistent and meaningful.
 - **Why** Same word (e.g., "Customer") means different things in Sales vs Billing; explicit boundaries prevent silent coupling.
 - **Example** `order` context owns `Order`, `OrderLine`; `customer` context owns `CustomerProfile`.
 - **Rule** No cross-context imports except via shared kernel primitives.
-- **See also** [[Context Map]], [[Shared Kernel]], [[Anti-Corruption Layer]]
+- **See also** [Context Map](#context-map), [Shared Kernel](#shared-kernel), [Anti-Corruption Layer](#anti-corruption-layer-acl)
 
 ### Ubiquitous Language
 Shared language between developers and domain experts, reflected in code.
@@ -223,35 +223,35 @@ Consistency boundary grouping entities and value objects mutated as a single uni
 - **Example** `Order` rejects transition to `Shipped` unless state is `Paid`.
 - **Rules** External access only through the root. References between aggregates by ID, never object reference. Children have no repository. Aggregate holds only invariant-bearing data; display-only fields go to projections.
 - **Contrast** Entity = identity, no consistency role. Value Object = no identity, immutable.
-- **See also** [[Aggregate Root]], [[Invariant]], [[Consistency Boundary]], [[Repository]]
+- **See also** [Aggregate Root](#aggregate-root), [Invariant](#invariant), [Consistency Boundary](#consistency-boundary), [Repository](#repository)
 
 ### Aggregate Root
 Primary entity controlling access to an aggregate.
 
 - **Why** Single entrypoint guarantees invariants are enforced on every mutation.
 - **Example** `Order` aggregates `OrderLine` items; external code never touches `OrderLine` directly.
-- **See also** [[Aggregate]]
+- **See also** [Aggregate](#aggregate)
 
 ### Consistency Boundary
 Scope within which invariants must hold atomically.
 
 - **Why** Matches the aggregate; defines transaction scope.
 - **Rule** Cross-aggregate consistency is eventual, via domain events.
-- **See also** [[Aggregate]], [[Eventual Consistency]]
+- **See also** [Aggregate](#aggregate), [Eventual Consistency](#eventual-consistency)
 
 ### Entity
 Domain object defined primarily by identity.
 
 - **Why** Identity persists across state changes.
 - **Example** `Customer` with stable `CustomerId`.
-- **Contrast** [[Value Object]] has no identity.
+- **Contrast** [Value Object](#value-object) has no identity.
 
 ### Value Object
 Immutable domain object defined only by values.
 
 - **Why** No identity, freely shareable, free from aliasing bugs.
 - **Example** `Money(amount, currency)`, `OrderId`.
-- **Contrast** [[Entity]] has identity.
+- **Contrast** [Entity](#entity) has identity.
 
 ### Domain Event
 Representation of something meaningful that happened in the domain.
@@ -259,43 +259,43 @@ Representation of something meaningful that happened in the domain.
 - **Why** Captures business-significant state changes; decouples emitters from reactors.
 - **Example** `OrderPlacedEvent(orderId, customerId, total)`.
 - **Rule** Emitted from aggregates, not from application layer. Internal type, unversioned; external publication goes through messaging adapter that maps to versioned event.
-- **See also** [[Integration Event]], [[Transactional Outbox]]
+- **See also** [Integration Event](#integration-event), [Transactional Outbox](#transactional-outbox)
 
 ### Domain Service
 Domain logic that does not naturally belong to a single aggregate.
 
 - **Why** Captures cross-aggregate behavior without forcing a god-aggregate.
 - **Example** `PricingService` computes price across customer segment, order, and current promotions.
-- **Contrast** [[Policy]] = stateless decision/computation. [[Domain Service]] = coordination across aggregates.
+- **Contrast** [Policy](#policy) = stateless decision/computation. [Domain Service](#domain-service) = coordination across aggregates.
 
 ### Repository
 Abstraction for loading and persisting aggregates.
 
 - **Why** Hides persistence details from the domain.
 - **Rules** Exists only for aggregate roots, never for child entities. Exposes aggregate-shaped operations (`save`, `delete`, `findById`, business-key lookups). Does not return projection DTOs. Does not take query-shape parameters (filters, sorts, pagination for display).
-- **Contrast** [[Query Port]] handles list/search/report shapes that don't match the aggregate.
-- **See also** [[Aggregate]], [[Query Port]]
+- **Contrast** [Query Port](#query-port) handles list/search/report shapes that don't match the aggregate.
+- **See also** [Aggregate](#aggregate), [Query Port](#query-port)
 
 ### Specification
 Reusable business predicate expressing selection or validation rules.
 
 - **Why** Encapsulates a boolean rule so it can be reused across queries and validation.
 - **Example** `EligibleForFreeShippingSpec.isSatisfiedBy(order) → boolean`.
-- **Contrast** [[Policy]] returns a decision or value; Specification returns boolean.
+- **Contrast** [Policy](#policy) returns a decision or value; Specification returns boolean.
 
 ### Policy
 Stateless business decision or computation rule.
 
 - **Why** Isolates "how we decide X" from aggregate state; survives independently of aggregate evolution.
 - **Example** `ShippingCostPolicy.compute(weight, destination, carrier) → Money`.
-- **Contrast** [[Specification]] returns boolean. [[Domain Service]] coordinates multiple aggregates; Policy decides.
+- **Contrast** [Specification](#specification) returns boolean. [Domain Service](#domain-service) coordinates multiple aggregates; Policy decides.
 
 ### Factory (Domain Factory)
 Component creating complex aggregates or entities.
 
 - **Why** Encapsulates creation invariants; prevents invalid construction.
 - **Example** `Order.create(customerId, lines, ...)` static factory on the aggregate.
-- **See also** [[Aggregate Root]]
+- **See also** [Aggregate Root](#aggregate-root)
 
 ### Invariant
 Business rule that must always hold within an aggregate boundary.
@@ -308,7 +308,7 @@ Small, explicitly shared subset of a domain model between bounded contexts.
 
 - **Why** Allows reuse of stable primitives (IDs, Money, base types) without coupling business behavior.
 - **Rule** Keep minimal; require strong coordination to change.
-- **Contrast** [[Anti-Corruption Layer]] isolates rather than shares.
+- **Contrast** [Anti-Corruption Layer](#anti-corruption-layer-acl) isolates rather than shares.
 
 ### Anti-Corruption Layer (ACL)
 Translation layer protecting a bounded context from another model.
@@ -320,7 +320,7 @@ Translation layer protecting a bounded context from another model.
 High-level representation of relationships between bounded contexts.
 
 - **Why** Documents integration patterns, ownership, and direction of dependency.
-- **See also** [[Open-Host Service]], [[Upstream / Downstream Context]], [[Shared Kernel]], [[Anti-Corruption Layer]]
+- **See also** [Open-Host Service](#open-host-service-ohs), [Upstream / Downstream Context](#upstream--downstream-context), [Shared Kernel](#shared-kernel), [Anti-Corruption Layer](#anti-corruption-layer-acl)
 
 ### Open-Host Service (OHS)
 Published inbound API through which a bounded context offers its capabilities to other contexts.
@@ -328,27 +328,27 @@ Published inbound API through which a bounded context offers its capabilities to
 - **Why** Gives consumers one stable front door (the provider's `application.port.in`) instead of reaching into its internals; the integration mechanism (in-process call vs REST) can change without touching consumers.
 - **How** Consumer injects the provider's inbound port. In a modular monolith it is an in-process CDI call; on extraction a REST client adapter implements the same port unchanged.
 - **Rule** The only permitted cross-context entry point. A consumer never touches another context's `domain`, `application.port.out`, `infrastructure`, or tables.
-- **Contrast** [[Shared Kernel]] shares a model; OHS shares a *service*. [[Anti-Corruption Layer]] protects the consumer from a foreign model.
-- **See also** [[Published Language]], [[Context Map]], [[Distributed Monolith]], [[Modular Monolith]]
+- **Contrast** [Shared Kernel](#shared-kernel) shares a model; OHS shares a *service*. [Anti-Corruption Layer](#anti-corruption-layer-acl) protects the consumer from a foreign model.
+- **See also** [Published Language](#published-language), [Context Map](#context-map), [Distributed Monolith](#distributed-monolith), [Modular Monolith](#modular-monolith)
 
 ### Published Language
 Well-documented shared contract a context exposes for integration.
 
 - **Why** Consumers depend on a deliberately published vocabulary, not on internal domain types.
 - **Example** The command/query contracts in `application.port.in`; the versioned integration events a context publishes.
-- **See also** [[Open-Host Service]], [[Integration Event]]
+- **See also** [Open-Host Service](#open-host-service-ohs), [Integration Event](#integration-event)
 
 ### Upstream / Downstream Context
 Direction of influence between two integrated contexts.
 
 - **Definition** Upstream (supplier) provides; downstream (consumer) depends. Changes in the upstream flow down to the downstream.
-- **See also** [[Open-Host Service]], [[Context Map]], [[Anti-Corruption Layer]]
+- **See also** [Open-Host Service](#open-host-service-ohs), [Context Map](#context-map), [Anti-Corruption Layer](#anti-corruption-layer-acl)
 
 ### Modular Monolith
 Single deployable composed of independently designed modules (bounded contexts) with explicit boundaries.
 
 - **Why** Captures most benefits of microservices (boundaries, ownership) without operational cost; supports later extraction.
-- **See also** [[Bounded Context]]
+- **See also** [Bounded Context](#bounded-context)
 
 ---
 
@@ -358,14 +358,14 @@ Single deployable composed of independently designed modules (bounded contexts) 
 Architectural style organizing code around dependency direction toward business rules.
 
 - **Rule** Inner layers must not depend on outer layers.
-- **See also** [[Outside-in Rule]], [[Use Case]]
+- **See also** [Outside-in Rule](#outside-in-rule), [Use Case](#use-case)
 
 ### Use Case
 Business operation exposed by the application layer.
 
 - **Why** Names a single application capability; one input, one outcome.
 - **Example** "Create order", "List order history".
-- **Implementation** [[Command]] or [[Query]] contract handled by a single [[Handler]].
+- **Implementation** [Command](#command) or [Query](#query) contract handled by a single [Handler](#handler).
 
 ### Handler
 Application component implementing one use case.
@@ -373,20 +373,20 @@ Application component implementing one use case.
 - **Why** "One command/query = one handler" prevents service-layer monoliths.
 - **Rules** Owns the transaction boundary. Does not invoke other handlers (no use-case chaining). Returns response DTO, projection, identifier value object, or void — never a managed JPA entity.
 - **Naming** `<Verb><Noun>Handler` (e.g., `CreateOrderHandler`).
-- **See also** [[Use Case]], [[Transaction Boundary]], [[Handler Return Contract]]
+- **See also** [Use Case](#use-case), [Transaction Boundary](#transaction-boundary), [Handler Return Contract](#handler-return-contract)
 
 ### Handler Return Contract
 Application handlers never return managed JPA entities or aggregates across the transaction boundary.
 
 - **Why** Returning entities exposes mutation API and lazy associations to callers outside any transaction.
 - **Rule** Return DTO/projection (built inside the transaction), identity value object (`OrderId`), or void.
-- **See also** [[Handler]], [[Open-Session-In-View]]
+- **See also** [Handler](#handler), [Open-Session-In-View](#open-session-in-view-osiv)
 
 ### DTO (Data Transfer Object)
 Structure used to transfer data between layers or systems.
 
 - **Why** Prevents leaking domain models externally; decouples wire format from internal model.
-- **Variants** [[Wire DTO]] (transport-coupled, in REST adapter), [[Projection DTO]] (read-side application response shape), [[Command]] / [[Query]] (use-case input shape).
+- **Variants** [Wire DTO](#wire-dto) (transport-coupled, in REST adapter), [Projection DTO](#projection-dto) (read-side application response shape), [Command](#command) / [Query](#query) (use-case input shape).
 
 ### Wire DTO
 Transport-coupled request/response model living in the REST adapter.
@@ -394,14 +394,14 @@ Transport-coupled request/response model living in the REST adapter.
 - **Why** Holds Jackson and OpenAPI annotations; isolates transport concerns from the application contract.
 - **Example** `CreateOrderRequest`, `OrderResponse`.
 - **Rule** Owned by `infrastructure.adapter.in.rest.dto`; never reaches application or domain.
-- **See also** [[Command]], [[Projection DTO]]
+- **See also** [Command](#command), [Projection DTO](#projection-dto)
 
 ### Projection DTO
 Read-side response shape returned by a query handler.
 
 - **Why** Decouples read model from aggregate shape; enables optimized read paths.
 - **Example** `OrderHistoryProjection`.
-- **See also** [[Projection]], [[Read Model]]
+- **See also** [Projection](#projection), [Read Model](#read-model)
 
 ### Mapper
 Component translating between models (Wire DTO ↔ Command/Projection, Aggregate ↔ Projection).
@@ -414,7 +414,7 @@ Scope within which changes are committed atomically.
 
 - **Rule** `@Transactional` lives on application service methods only. Domain and adapters are transaction-annotation-free.
 - **Rule** One aggregate mutated per transaction.
-- **See also** [[Handler]], [[Aggregate]]
+- **See also** [Handler](#handler), [Aggregate](#aggregate)
 
 ### Validation
 Verification that incoming data satisfies structural or business requirements.
@@ -438,14 +438,14 @@ Binding configuration values into typed application objects.
 Separation of write operations from read operations.
 
 - **Why** Different shapes, different scaling profiles, different consistency needs.
-- **See also** [[CQRS-lite]], [[Command]], [[Query]]
+- **See also** [CQRS-lite](#cqrs-lite), [Command](#command), [Query](#query)
 
 ### CQRS-lite
 Pragmatic CQRS without separate write/read databases or eventual-consistency projections.
 
 - **Why** Captures the benefit of separating command and query paths in code without paying the operational cost of two stores.
 - **When** Read-heavy UI pages and reports where aggregate shape doesn't match read shape.
-- **See also** [[CQRS]], [[Projection]]
+- **See also** [CQRS](#cqrs-command-query-responsibility-segregation), [Projection](#projection)
 
 ### Command
 Request that changes system state.
@@ -453,33 +453,33 @@ Request that changes system state.
 - **Why** Names the intent; carries domain values, not transport types.
 - **Example** `CreateOrderCommand(customerId, lines)`.
 - **Rule** Built from primitives or domain value objects; transport-free.
-- **Contrast** [[Query]] does not modify state.
+- **Contrast** [Query](#query) does not modify state.
 
 ### Query
 Request retrieving data without modifying state.
 
 - **Example** `OrderHistoryQuery(customerId, pageSize)`.
-- **See also** [[Query Port]], [[Projection]]
+- **See also** [Query Port](#query-port), [Projection](#projection)
 
 ### Query Port
 Outbound port for read-side queries that bypass aggregates.
 
 - **Why** List, search, report, and cross-aggregate reads must not hydrate aggregates.
 - **Example** `OrderHistoryQueryPort` implemented by JPQL or native SQL adapter returning projections.
-- **See also** [[Read Path]], [[Projection]]
+- **See also** [Read Path](#read-path), [Projection](#projection)
 
 ### Read Model
 Query-optimized representation of data.
 
 - **Why** Denormalized for read performance; matches UI shape, not domain shape.
-- **See also** [[Projection]]
+- **See also** [Projection](#projection)
 
 ### Projection
 Transformed view of domain data optimized for reading.
 
 - **Why** Avoids aggregate hydration for display-only reads.
 - **Example** `OrderHistoryProjection` returned by a JPQL query.
-- **Contrast** [[Read Model]] is the broader concept; Projection is a specific shape returned from a query.
+- **Contrast** [Read Model](#read-model) is the broader concept; Projection is a specific shape returned from a query.
 
 ### Write Path
 Command handlers load and mutate aggregates through `domain.repository`.
@@ -492,7 +492,7 @@ Query handlers return projection DTOs.
 - **Routing**
   - Single-aggregate read where projection matches aggregate shape: load through domain repository, map inside handler.
   - List, search, report, cross-aggregate: go through query port; never hydrate aggregates.
-- **See also** [[Query Port]], [[Projection]]
+- **See also** [Query Port](#query-port), [Projection](#projection)
 
 ### Event Store
 Persistent repository for domain events.
@@ -526,7 +526,7 @@ Entity attached to an active persistence context.
 
 - **Why** Hibernate tracks changes and flushes them at commit.
 - **Rule** Never returned across the transaction boundary.
-- **See also** [[Handler Return Contract]], [[Open-Session-In-View]]
+- **See also** [Handler Return Contract](#handler-return-contract), [Open-Session-In-View](#open-session-in-view-osiv)
 
 ### Detached Entity
 Entity that has left the persistence context.
@@ -544,7 +544,7 @@ Anti-pattern keeping the Hibernate session open through serialization to the wir
 
 - **Why disabled** Hides N+1 queries; runs reads outside transaction consistency; couples wire format to persistence model.
 - **Rule** Disabled. Mapping aggregate → DTO happens inside the handler while the session is open.
-- **See also** [[Handler Return Contract]], [[N+1 Query]]
+- **See also** [Handler Return Contract](#handler-return-contract), [N+1 Query](#n1-query)
 
 ### N+1 Query
 Pattern where loading a list issues one query for the list plus one per item.
@@ -584,7 +584,7 @@ Identifier propagated across requests and services for traceability.
 
 - **Why** Joins client-visible error and server-side log without leaking internal detail.
 - **Surfacing** `correlationId` extension field in Problem Detail and response header.
-- **See also** [[Distributed Tracing]], [[Observability]]
+- **See also** [Distributed Tracing](#distributed-tracing), [Observability](#observability)
 
 ---
 
@@ -593,7 +593,7 @@ Identifier propagated across requests and services for traceability.
 ### Integration Event
 Event published for consumption by external systems or other bounded contexts.
 
-- **Contrast** [[Domain Event]] is internal and unversioned; integration event is a versioned contract.
+- **Contrast** [Domain Event](#domain-event) is internal and unversioned; integration event is a versioned contract.
 - **Rule** Created by the outbound messaging adapter by translating a domain event.
 
 ### Transactional Outbox
@@ -601,7 +601,7 @@ Reliability pattern ensuring DB write and event publication are atomic.
 
 - **How** Events written to an outbox table in the same transaction as the aggregate; separate publisher reads and forwards them.
 - **Why** Prevents lost or duplicated events under failure.
-- **See also** [[At-least-once Delivery]], [[Idempotent Consumer]]
+- **See also** [At-least-once Delivery](#at-least-once-delivery), [Idempotent Consumer](#idempotent-consumer)
 
 ### CloudEvents
 Standardized event envelope specification.
@@ -616,7 +616,7 @@ Policy for evolving event contracts that cross context or service boundaries.
 - **Default** Backward compatible: new optional fields are non-breaking; field removal/rename/type-change requires a new major version.
 - **Convention** Major version in CloudEvents `type` (`com.example.order.OrderPlaced.v1`). Minor changes don't change `type`; `dataschema` points to current URL.
 - **Coexistence** Producers publish old and new during transition; consumers migrate independently.
-- **See also** [[Schema Registry]], [[Backward Compatibility]]
+- **See also** [Schema Registry](#schema-registry), [Backward Compatibility](#backward-compatibility)
 
 ### Backward Compatibility
 A new producer can be consumed by an old consumer.
@@ -634,7 +634,7 @@ Centralized store for event schemas with compatibility enforcement.
 Delivery guarantee where a message may be delivered more than once.
 
 - **Implication** Consumers must be idempotent.
-- **See also** [[Idempotent Consumer]], [[Transactional Outbox]]
+- **See also** [Idempotent Consumer](#idempotent-consumer), [Transactional Outbox](#transactional-outbox)
 
 ### Idempotent Consumer
 Consumer that safely processes duplicate messages without changing the outcome.
@@ -644,7 +644,7 @@ Consumer that safely processes duplicate messages without changing the outcome.
 ### Idempotency
 Property allowing repeated execution without changing the outcome.
 
-- **See also** [[Business-key Idempotency]], [[Technical Idempotency]]
+- **See also** [Business-key Idempotency](#business-key-idempotency), [Technical Idempotency](#technical-idempotency)
 
 ### Business-key Idempotency
 Duplicate detection via a unique business identifier.
@@ -658,42 +658,42 @@ Duplicate detection via client-supplied key or message ID.
 
 - **When** No natural business key (payment APIs, Kafka consumers without dedup key).
 - **How** `Idempotency-Key` header or message ID stored in an idempotency store with the response/outcome.
-- **See also** [[Idempotent Consumer]]
+- **See also** [Idempotent Consumer](#idempotent-consumer)
 
 ### Saga Pattern
 Distributed transaction pattern coordinating local transactions via events or commands.
 
 - **Why** Replaces distributed ACID transactions.
 - **Variants** Orchestration-based (central coordinator), choreography-based (peer events).
-- **See also** [[Orchestration]], [[Choreography]], [[Process Manager]], [[Compensating Transaction]]
+- **See also** [Orchestration](#orchestration), [Choreography](#choreography), [Process Manager](#process-manager), [Compensating Transaction](#compensating-transaction)
 
 ### Choreography
 Saga coordination in which each context reacts to events and emits its own, with no central coordinator.
 
 - **Why** Maximum autonomy; only facts cross context boundaries; a new participant subscribes without changing the others.
 - **Cost** The process definition and compensation logic are distributed across participants; no single place shows the flow or its state.
-- **See also** [[Saga Pattern]], [[Orchestration]]
+- **See also** [Saga Pattern](#saga-pattern), [Orchestration](#orchestration)
 
 ### Orchestration
-Saga coordination in which a central [[Process Manager]] owns the flow, issuing steps to participants and consuming their outcome events.
+Saga coordination in which a central [Process Manager](#process-manager) owns the flow, issuing steps to participants and consuming their outcome events.
 
 - **Why** One visible, testable place holds the flow, its state, and its compensations; supports timeouts, retries, and whole-saga audit.
 - **Cost** A coordination component to build; the orchestrator issues commands across a context boundary — the one sanctioned case of a cross-context command.
-- **See also** [[Saga Pattern]], [[Choreography]], [[Process Manager]]
+- **See also** [Saga Pattern](#saga-pattern), [Choreography](#choreography), [Process Manager](#process-manager)
 
 ### Process Manager
 Component that owns the state of one running saga and advances it, reacting to participants' outcome events and issuing the next step or a compensation.
 
 - **Why** Centralizes an orchestrated saga's state machine and failure handling.
 - **Rule** Owns process state only, never a participant's domain data or aggregate; lives in the context that owns the process, or a dedicated coordination context when no single participant does.
-- **See also** [[Orchestration]], [[Saga Pattern]], [[Compensating Transaction]]
+- **See also** [Orchestration](#orchestration), [Saga Pattern](#saga-pattern), [Compensating Transaction](#compensating-transaction)
 
 ### Compensating Transaction
 A local transaction that semantically undoes the effect of a previously committed saga step.
 
 - **Why** A committed local transaction cannot be rolled back; failure is handled by applying an inverse action (release the reservation) rather than reverting.
-- **Note** Idempotent under [[At-least-once Delivery]]; a step that cannot be compensated is ordered last.
-- **See also** [[Saga Pattern]], [[Eventual Consistency]]
+- **Note** Idempotent under [At-least-once Delivery](#at-least-once-delivery); a step that cannot be compensated is ordered last.
+- **See also** [Saga Pattern](#saga-pattern), [Eventual Consistency](#eventual-consistency)
 
 ### Eventual Consistency
 State across services converges asynchronously.
@@ -740,7 +740,7 @@ Architecture centered on publishing and reacting to events.
 ### Microservices
 Independently deployable, fine-grained services communicating over APIs and message brokers.
 
-- **Contrast** [[Modular Monolith]] separates modules without separate deployments.
+- **Contrast** [Modular Monolith](#modular-monolith) separates modules without separate deployments.
 
 ### Integration Pattern
 Common approach for integrating systems.
@@ -805,7 +805,7 @@ Verification of identity (who the caller is).
 ### Authorization
 Verification of permissions (what the caller may do).
 
-- **See also** [[RBAC]], [[ABAC]]
+- **See also** [RBAC](#rbac-role-based-access-control), [ABAC](#abac-attribute-based-access-control)
 
 ### RBAC (Role-Based Access Control)
 Authorization model based on roles assigned to subjects.
@@ -813,7 +813,7 @@ Authorization model based on roles assigned to subjects.
 ### ABAC (Attribute-Based Access Control)
 Authorization model based on attributes of subject, resource, and context.
 
-- **Contrast** [[RBAC]] uses roles only; ABAC supports finer-grained policy.
+- **Contrast** [RBAC](#rbac-role-based-access-control) uses roles only; ABAC supports finer-grained policy.
 
 ### JWT (JSON Web Token)
 Compact token format for authentication and authorization claims.
@@ -884,7 +884,7 @@ Check determining whether the process can serve traffic.
 ### Anemic Domain Model
 Domain holds only data; behavior leaks to application services.
 
-- **Why bad** Aggregate invariants weaken; application becomes [[Transaction Script]] monolith.
+- **Why bad** Aggregate invariants weaken; application becomes [Transaction Script](#transaction-script) monolith.
 - **Fix** Move business behavior back to aggregates and domain services.
 
 ### Transaction Script
@@ -913,8 +913,8 @@ Microservices with tight runtime coupling; cannot deploy independently.
 
 - **Why bad** Combines the operational cost of microservices with the coupling of a monolith; one service's outage or change cascades to others.
 - **Cause** Synchronous cross-service calls on the request path where an asynchronous local projection would do.
-- **Fix** After extraction, prefer a local projection fed by the provider's integration events over a synchronous [[Open-Host Service]] call across the network.
-- **See also** [[Chatty Service Communication]], [[Eventual Consistency]]
+- **Fix** After extraction, prefer a local projection fed by the provider's integration events over a synchronous [Open-Host Service](#open-host-service-ohs) call across the network.
+- **See also** [Chatty Service Communication](#chatty-service-communication), [Eventual Consistency](#eventual-consistency)
 
 ### Leaky Abstraction
 Abstraction exposing implementation details to consumers.
@@ -925,7 +925,7 @@ Services organized around CRUD entities instead of business capabilities.
 ### Smart Controller / Thin Domain
 Business logic in controllers or application services.
 
-- **See also** [[Anemic Domain Model]]
+- **See also** [Anemic Domain Model](#anemic-domain-model)
 
 ### Over-Mocking
 Excessive reliance on mocks producing tests coupled to implementation.
@@ -966,7 +966,7 @@ Test ensuring compatibility between communicating systems.
 - **Variants**
   - **Provider-driven** (this template): provider publishes OpenAPI; provider tests verify implementation matches spec; consumers verify usage stays within it.
   - **Consumer-driven**: consumer defines contracts; provider verifies them. Not used in this template.
-- **See also** [[Bidirectional Contract Testing]], [[OpenAPI Validation]], [[Pact]]
+- **See also** [Bidirectional Contract Testing](#bidirectional-contract-testing), [OpenAPI Validation](#openapi-validation), [Pact](#pact)
 
 ### Bidirectional Contract Testing
 Pact mode where consumer and provider verify against the published OpenAPI spec independently, then matched in the Pact Broker.
@@ -1014,7 +1014,7 @@ Test double returning predefined responses.
 Test double verifying interactions.
 
 - **Risk** Over-mocking couples tests to implementation.
-- **See also** [[Over-Mocking]]
+- **See also** [Over-Mocking](#over-mocking)
 
 ### Fake
 Lightweight working implementation (e.g., in-memory repository).
@@ -1038,7 +1038,7 @@ Predefined test data or object graph.
 Test utility creating predefined valid domain objects.
 
 - **Example** `paidOrder()`, `expiredSubscription()`.
-- **Contrast** [[Test Data Builder]] is flexible; Object Mother is named-scenario.
+- **Contrast** [Test Data Builder](#test-data-builder) is flexible; Object Mother is named-scenario.
 
 ### Test Data Builder
 Fluent builder for creating customized test objects.

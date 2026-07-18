@@ -1,6 +1,6 @@
 # Cross-Context Integration Flows
 
-This document describes how one bounded context integrates with another inside the modular monolith: the runtime patterns available, when to choose each, and the design decisions behind them. It complements [README — Cross-context integration](../README.md#cross-context-integration) (the rules), [Adapter Flows](adapter-flows.md) (per-adapter call chains), and [Extracting a Bounded Context to a Microservice](extracting-microservices.md) (what each pattern becomes when a context is deployed separately).
+This document describes how one bounded context integrates with another inside the modular monolith: the interaction patterns available, when to choose each, and the design decisions behind them. It complements [README — Cross-context integration](../README.md#cross-context-integration) (the rules), [Adapter Flows](adapter-flows.md) (per-adapter call chains), and [Extracting a Bounded Context to a Microservice](extracting-microservices.md) (what each pattern becomes when a context is deployed separately).
 
 Every cross-context interaction enters another context only through its Open-Host Service — its inbound published API in `application.port.in`, the same command and query use cases the context's own REST adapter drives. A context never reaches into another's `domain`, `application.port.out`, `infrastructure`, or tables; those are private.
 
