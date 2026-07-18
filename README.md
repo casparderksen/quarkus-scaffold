@@ -42,12 +42,12 @@ Concrete consequences:
 The structure enables (eventual) extraction of Maven modules or independent services from a modular monolith.
 It also supports sharing cross-cutting concerns (shared kernel, infrastructure) across teams.
 
-See [Glossary](doc/glossary.md) for an explanation of concepts, [Adapter Flows](doc/adapter-flows.md) for
-end-to-end call chains per inbound and outbound adapter, [Cross-Context Integration Flows](doc/cross-context-flows.md)
-for how bounded contexts integrate with one another, [Transactional Outbox](doc/transactional_outbox.md) and
-[Idempotent Consumer](doc/idempotent_consumer.md) for the two halves of reliable eventing,
-[Testing Strategy](doc/testing-strategy.md) for testing guidelines supported by this template, and
-[Extracting to microservices](doc/extracting-microservices.md) for turning a bounded context into a separately deployed service.
+See [Glossary](docs/glossary.md) for an explanation of concepts, [Adapter Flows](docs/adapter-flows.md) for
+end-to-end call chains per inbound and outbound adapter, [Cross-Context Integration Flows](docs/cross-context-flows.md)
+for how bounded contexts integrate with one another, [Transactional Outbox](docs/transactional_outbox.md) and
+[Idempotent Consumer](docs/idempotent_consumer.md) for the two halves of reliable eventing,
+[Testing Strategy](docs/testing-strategy.md) for testing guidelines supported by this template, and
+[Extracting to microservices](docs/extracting-microservices.md) for turning a bounded context into a separately deployed service.
 
 ### Package structure
 
@@ -293,7 +293,7 @@ HTTP error responses are RFC 9457 Problem Details, serialized by the `quarkus-ht
 
 ### Eventing
 
-Domain events are emitted from aggregates and captured by the application layer. External publication goes through outbound ports only, implemented by the messaging adapter, with the transactional outbox pattern guaranteeing at-least-once delivery aligned with the source transaction. See [Transactional Outbox](doc/transactional_outbox.md).
+Domain events are emitted from aggregates and captured by the application layer. External publication goes through outbound ports only, implemented by the messaging adapter, with the transactional outbox pattern guaranteeing at-least-once delivery aligned with the source transaction. See [Transactional Outbox](docs/transactional_outbox.md).
 
 **Inbound integration events always map to commands.** The adapter unwraps the envelope, translates external vocabulary to a local command, and invokes a handler. The handler decides what (if anything) happens, loads the aggregate, mutates, and emits its own domain event. Projection updates go through a command handler the same way as state changes — keeping transaction boundary, idempotency, and audit trail consistent.
 
@@ -317,13 +317,13 @@ Events crossing bounded-context or service boundaries are contracts and must be 
 
 ### Idempotency
 
-Consumers must tolerate at-least-once delivery. The default is business-key idempotency; per-message technical deduplication is added per use case when no natural key exists. See [Idempotent Consumer](doc/idempotent_consumer.md).
+Consumers must tolerate at-least-once delivery. The default is business-key idempotency; per-message technical deduplication is added per use case when no natural key exists. See [Idempotent Consumer](docs/idempotent_consumer.md).
 
 ### Cross-context integration
 
 Every top-level package under `org.example` except `shared` is a bounded context bound by the rules in this section; there is no `common` or `util` catch-all exempt from them. A bounded context reaches data owned by another context **only** through that context's Open-Host Service — its inbound published API in `application.port.in`, the same command and query use cases its REST adapter drives. It never touches another context's `domain`, `application.port.out`, `infrastructure`, or tables; those are private. Reads are synchronous Open-Host Service calls; writes propagate as integration events through the transactional outbox, because a synchronous cross-context write cannot be both atomic and respect the one-aggregate-per-transaction boundary.
 
-The interaction patterns (Foreign Read, Cross-Context Report, Notification, Saga) and the guidance for choosing between them are in [Cross-Context Integration Flows](doc/cross-context-flows.md). See also [Extracting to microservices](doc/extracting-microservices.md) and [Adapter Flows](doc/adapter-flows.md).
+The interaction patterns (Foreign Read, Cross-Context Report, Notification, Saga) and the guidance for choosing between them are in [Cross-Context Integration Flows](docs/cross-context-flows.md). See also [Extracting to microservices](docs/extracting-microservices.md) and [Adapter Flows](docs/adapter-flows.md).
 
 ### Scheduled jobs
 
@@ -350,7 +350,7 @@ Cross-context coupling is forbidden at three levels:
 - **Data movement.** SQL must not copy or move rows between contexts. Cross-context data flow is implemented as application code — a synchronous Open-Host Service read, or an integration event for a state change — never at the database level.
 - **References.** Tables in one context must not declare foreign keys to tables in another context, and queries must not join across contexts. A context holds an ID (plain column, no FK constraint) and obtains data across the boundary the same way application code does: by a synchronous call to the source context's Open-Host Service (its `application.port.in`). Once that context is extracted to a service, the same boundary may instead be served by a local projection built from its integration events — see [Cross-context integration](#cross-context-integration).
 
-When a bounded context is extracted to a separate service, its migration folder moves with it. The new service runs the same migrations against its own database; the monolith drops the location from its Flyway configuration. See [Extracting to microservices](doc/extracting-microservices.md) for the full procedure.
+When a bounded context is extracted to a separate service, its migration folder moves with it. The new service runs the same migrations against its own database; the monolith drops the location from its Flyway configuration. See [Extracting to microservices](docs/extracting-microservices.md) for the full procedure.
 
 ### Guidelines for use
 

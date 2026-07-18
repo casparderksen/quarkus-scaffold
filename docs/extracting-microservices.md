@@ -26,7 +26,7 @@ Extraction deploys one context as its own service. It leaves the inbound port in
 **Synchronous REST client (extracted Open-Host Service).** The same `application.port.in` port is implemented by a REST client adapter in the consumer's `infrastructure.adapter.out.client.rest`. The consumer's application logic is untouched — it still depends on the same inbound port interface.
 
 - *Advantages:* a mechanical swap, the port interface unchanged; reads are up-to-the-moment; no read model to build.
-- *Disadvantages:* runtime and availability coupling — the caller now fails or stalls when the provider is down or slow. Reaching for synchronous cross-service calls on the request path is how a set of services becomes a [distributed monolith](glossary.md).
+- *Disadvantages:* runtime and availability coupling — the caller now fails or stalls when the provider is down or slow. Reaching for synchronous cross-service calls on the request path is how a set of services becomes a [distributed monolith](glossary/distributed-monolith.md).
 
 *Guidance:* default to a local projection, which fits the staleness-tolerant nature of a Foreign Read. Reserve the synchronous REST client for reads whose freshness genuinely requires an up-to-the-moment answer and where a projection's staleness would be unacceptable.
 
