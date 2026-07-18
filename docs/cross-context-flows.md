@@ -4,6 +4,8 @@ This document describes how one bounded context integrates with another inside t
 
 Every cross-context interaction enters another context only through its Open-Host Service — its inbound published API in `application.port.in`, the same command and query use cases the context's own REST adapter drives. A context never reaches into another's `domain`, `application.port.out`, `infrastructure`, or tables; those are private.
 
+Each interaction has a direction. The context that provides — the Open-Host Service being called, or the context whose events are consumed — is the [upstream](glossary/upstream-downstream-context.md) context, the supplier; the context that reaches for it or reacts to it is downstream, the consumer that depends on it. Each scenario below names which context plays which role, except a choreographed Saga, where the roles are relative per event (see Saga).
+
 Notation follows [Adapter Flows](adapter-flows.md): `→` a synchronous call, `▼` the next stage in the same flow, `[tx]` runs inside the application handler's transaction.
 
 ## Choosing a scenario
@@ -41,7 +43,7 @@ These constraints apply to every scenario and follow from the architecture rules
 
 A bounded context often needs a piece of data owned by another context in order to render a response — an order screen showing the customer's name, an invoice listing product descriptions. From the consumer's side the data is read-only, and a slightly stale value is acceptable: the customer name on an order confirmation need not reflect a rename made moments earlier.
 
-In the modular monolith this is a synchronous call through the provider's Open-Host Service. The consumer injects the provider's inbound query port — the same use case the provider's own REST adapter drives — and receives a projection DTO. The call is an ordinary in-process CDI invocation, so it is cheap and immediate, and the consumer never sees the provider's aggregate, entities, or tables.
+In the modular monolith this is a synchronous call through the provider's Open-Host Service. The provider is the upstream context; the reading context is downstream. The consumer injects the provider's inbound query port — the same use case the provider's own REST adapter drives — and receives a projection DTO. The call is an ordinary in-process CDI invocation, so it is cheap and immediate, and the consumer never sees the provider's aggregate, entities, or tables.
 
 ```
 Consumer handler [tx, readOnly]  (consumer context, application.service)
@@ -70,7 +72,7 @@ A report, list, or dashboard often draws on data owned by several contexts at on
 
 This cannot be served by reading each context in turn. Cross-context joins are forbidden, so the data cannot be combined in the database; and fanning out a synchronous Open-Host Service call per context — and per row — is an N+1 explosion that coalesces the contexts on the request path. A cross-context report is therefore backed by a **dedicated read model**, owned by the reporting context and maintained from the source contexts' integration events. This holds inside the monolith, not only after extraction — it is the one read that justifies a projection before a context is ever split out.
 
-Each source context publishes integration events; the reporting context subscribes and updates its read model through a command handler, the same way any projection is updated. The read model is denormalized for the shape of the report, so the query path is an ordinary local read — filtering, sorting, pagination, and joins all happen within the read model, which the reporting context owns in full.
+Each source context is upstream and the reporting context downstream: each source context publishes integration events; the reporting context subscribes and updates its read model through a command handler, the same way any projection is updated. The read model is denormalized for the shape of the report, so the query path is an ordinary local read — filtering, sorting, pagination, and joins all happen within the read model, which the reporting context owns in full.
 
 ```
 Feed (asynchronous, continuous — one subscription per source context):
@@ -108,7 +110,7 @@ Because the read model is populated asynchronously, its data is eventually consi
 
 ## Notification
 
-A context sometimes needs another context to know that something happened, without depending on what the other context does about it — an order was placed, a payment was captured, an account was closed. The initiating context owns the fact; each interested context decides for itself how to react.
+A context sometimes needs another context to know that something happened, without depending on what the other context does about it — an order was placed, a payment was captured, an account was closed. The initiating context owns the fact; each interested context decides for itself how to react. The initiator is upstream (it owns and publishes the fact); each interested context is downstream (it depends on that fact and reacts).
 
 Because a cross-context write can never be a synchronous call, the initiating context calls no one. It records the fact as a domain event, written to the transactional outbox in the same transaction that changed its own aggregate. The two commit atomically, so the fact is never lost and never published for a change that rolled back. The event carries the fact in the initiator's own vocabulary — `OrderPlaced`, not `ReserveStock` — and names no consumer.
 
@@ -147,6 +149,8 @@ This is the transactional-outbox publication (adapter-flow #7) on the producer s
 ## Saga
 
 Some cross-context writes are not fire-and-forget: the initiating context must know whether the other context succeeded — to continue its own work, or to undo it when the other context fails. An order that reserves stock and then captures payment, where a failed payment must release the reserved stock, is the archetype. No step can be a synchronous cross-context call and no single transaction can span the contexts, so a saga is always a sequence of local transactions linked by events. There is no distributed transaction and no lock held across contexts. Delivery is at-least-once, so every step and every compensation is idempotent, and compensations are **semantic** — they undo the effect of a committed step (release the reservation), never roll back a transaction that committed long ago. A step that cannot be compensated is ordered last, after every compensatable step has succeeded.
+
+Unlike the directional scenarios above, a saga has no fixed upstream/downstream pair: each participant is upstream for the outcome facts it publishes and downstream for the facts — or, under orchestration, the commands — it consumes. The roles are relative to each event, not to the saga as a whole.
 
 A saga runs in one of two styles, chosen by how complex the process is and whether any single context owns it.
 
