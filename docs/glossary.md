@@ -22,31 +22,6 @@ group.
 - [Separation of Concerns](glossary/separation-of-concerns.md)
 - [Single Responsibility Principle (SRP)](glossary/single-responsibility-principle.md)
 
-## Layered architecture
-
-- [Application Layer](glossary/application-layer.md)
-- [Domain Layer](glossary/domain-layer.md)
-- [Infrastructure Layer](glossary/infrastructure-layer.md)
-- [Layered Architecture](glossary/layered-architecture.md)
-
-## Hexagonal architecture
-
-- [Adapter](glossary/adapter.md)
-- [Application Core](glossary/application-core.md)
-- [Boundary](glossary/boundary.md)
-- [Cache Adapter](glossary/cache-adapter.md)
-- [Client Adapter](glossary/client-adapter.md)
-- [Driven Adapter](glossary/driven-adapter.md)
-- [Driving Adapter](glossary/driving-adapter.md)
-- [Hexagonal Architecture](glossary/hexagonal-architecture.md)
-- [Inbound Adapter](glossary/inbound-adapter.md)
-- [Inbound Port](glossary/inbound-port.md)
-- [Messaging Adapter](glossary/messaging-adapter.md)
-- [Outbound Adapter](glossary/outbound-adapter.md)
-- [Outbound Port](glossary/outbound-port.md)
-- [Persistence Adapter](glossary/persistence-adapter.md)
-- [Port](glossary/port.md)
-
 ## Domain-Driven Design
 
 - [Aggregate](glossary/aggregate.md)
@@ -71,6 +46,31 @@ group.
 - [Ubiquitous Language](glossary/ubiquitous-language.md)
 - [Upstream / Downstream Context](glossary/upstream-downstream-context.md)
 - [Value Object](glossary/value-object.md)
+
+## Layered architecture
+
+- [Application Layer](glossary/application-layer.md)
+- [Domain Layer](glossary/domain-layer.md)
+- [Infrastructure Layer](glossary/infrastructure-layer.md)
+- [Layered Architecture](glossary/layered-architecture.md)
+
+## Hexagonal architecture
+
+- [Adapter](glossary/adapter.md)
+- [Application Core](glossary/application-core.md)
+- [Boundary](glossary/boundary.md)
+- [Cache Adapter](glossary/cache-adapter.md)
+- [Client Adapter](glossary/client-adapter.md)
+- [Driven Adapter](glossary/driven-adapter.md)
+- [Driving Adapter](glossary/driving-adapter.md)
+- [Hexagonal Architecture](glossary/hexagonal-architecture.md)
+- [Inbound Adapter](glossary/inbound-adapter.md)
+- [Inbound Port](glossary/inbound-port.md)
+- [Messaging Adapter](glossary/messaging-adapter.md)
+- [Outbound Adapter](glossary/outbound-adapter.md)
+- [Outbound Port](glossary/outbound-port.md)
+- [Persistence Adapter](glossary/persistence-adapter.md)
+- [Port](glossary/port.md)
 
 ## Clean Architecture
 
@@ -122,10 +122,8 @@ group.
 
 - [At-least-once Delivery](glossary/at-least-once-delivery.md)
 - [Backward Compatibility](glossary/backward-compatibility.md)
-- [Bulkhead Pattern](glossary/bulkhead-pattern.md)
 - [Business-key Idempotency](glossary/business-key-idempotency.md)
 - [Choreography](glossary/choreography.md)
-- [Circuit Breaker](glossary/circuit-breaker.md)
 - [CloudEvents](glossary/cloudevents.md)
 - [Compensating Transaction](glossary/compensating-transaction.md)
 - [Dead Letter Queue (DLQ)](glossary/dead-letter-queue.md)
@@ -134,14 +132,11 @@ group.
 - [Idempotency](glossary/idempotency.md)
 - [Idempotent Consumer](glossary/idempotent-consumer.md)
 - [Integration Event](glossary/integration-event.md)
-- [Load Balancing](glossary/load-balancing.md)
 - [Orchestration](glossary/orchestration.md)
 - [Process Manager](glossary/process-manager.md)
-- [Retry Policy](glossary/retry-policy.md)
 - [Saga Pattern](glossary/saga-pattern.md)
 - [Schema Registry](glossary/schema-registry.md)
 - [Technical Idempotency](glossary/technical-idempotency.md)
-- [Timeout Pattern](glossary/timeout-pattern.md)
 - [Transactional Outbox](glossary/transactional-outbox.md)
 
 ## Integration
@@ -156,6 +151,7 @@ group.
 - [Integration Pattern](glossary/integration-pattern.md)
 - [JSON](glossary/json.md)
 - [JSON Schema](glossary/json-schema.md)
+- [Load Balancing](glossary/load-balancing.md)
 - [Message Broker](glossary/message-broker.md)
 - [Microservices](glossary/microservices.md)
 - [OpenAPI](glossary/openapi.md)
@@ -163,6 +159,13 @@ group.
 - [SOAP](glossary/soap.md)
 - [Service Discovery](glossary/service-discovery.md)
 - [XML](glossary/xml.md)
+
+## Resilience
+
+- [Bulkhead Pattern](glossary/bulkhead-pattern.md)
+- [Circuit Breaker](glossary/circuit-breaker.md)
+- [Retry Policy](glossary/retry-policy.md)
+- [Timeout Pattern](glossary/timeout-pattern.md)
 
 ## Security
 
