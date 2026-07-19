@@ -16,9 +16,9 @@ When there is no natural business key — payment APIs, or consumers processing 
 
 This is a cross-cutting capability:
 
-- an `IdempotencyStore` port under `shared.application.port.out.idempotency`,
 - an inbound interceptor under `shared.infrastructure.adapter.in.idempotency`,
-- a JDBC or Redis store under `shared.infrastructure.adapter.out.idempotency`.
+- an `IdempotencyStore` port under `shared.application.port.out.idempotency`,
+- an implementation (e.g. JDBC or Redis) under `shared.infrastructure.adapter.out.idempotency`.
 
 These packages are added to the tree only when a use case requires the framework; they are not part of the default scaffold. The deduplication table is shared infrastructure, migrated under `db/migration/shared/`.
 
