@@ -50,7 +50,7 @@ Consumer handler [tx, readOnly]  (consumer context, application.service)
   ▼
 Provider <X>Query  (provider application.port.in.query)   — in-process CDI call
   ▼
-Provider <X>QueryHandler [tx, readOnly]   (continues as adapter-flow #2)
+Provider <X>QueryHandler [tx, readOnly]   (continues as the REST query read flow)
   ▼
 Consumer receives a projection DTO  (never a provider aggregate or entity)
 ```
@@ -103,7 +103,7 @@ Because the read model is populated asynchronously, its data is eventually consi
 - All filtering, sorting, pagination, joining, and aggregation happen within the read model; the query never crosses a context boundary.
 - Store only the fields the report needs, denormalized for the query shape.
 - Place the read model in the context that owns the report. When the report belongs to no single context, place it in a dedicated reporting context.
-- This scenario is for reads spanning several contexts. A list or report over a single context — even a large one — is an ordinary local query (adapter-flow #2b), not a cross-context concern.
+- This scenario is for reads spanning several contexts. A list or report over a single context — even a large one — is an ordinary local query (the list / cross-aggregate read flow), not a cross-context concern.
 - A database view is not an alternative to the read model when the report spans contexts: a view over another context's tables is a cross-context join that binds to that context's private structure — forbidden by the same rule that forbids the join, and impossible to keep once the context owns a separate database, so it would not survive extraction. A view or materialized view is fine only within a single context, including over the reporting context's own read-model tables.
 
 *Extraction note:* the read model already exists; at extraction only its event feeds repoint onto the broker. There is no projection-versus-REST choice here — a report is a projection by construction.
@@ -117,24 +117,24 @@ Because a cross-context write can never be a synchronous call, the initiating co
 Each interested context subscribes to that event, translates it into a command in its own vocabulary, and reacts within its own transaction. The initiator does not wait, does not learn the outcome, and does not know which contexts consume the fact; a new consumer can be added without touching it.
 
 ```
-Producer side (initiating context) — within its own write, adapter-flow #1 + #7 Phase A:
+Producer side (initiating context) — within its own write, the command write flow plus transactional outbox Phase A:
   A command handler [tx]
     ├─ mutate A's own aggregate
     └─ emit domain event → outbox  (same tx)      — a fact in A's vocabulary
     ▼ commit: aggregate row + outbox row, atomically
-  (the outbox poller dispatches later — adapter-flow #7 Phase B)
+  (the outbox poller dispatches later — transactional outbox Phase B)
 
-Consumer side (each interested context) — adapter-flow #3:
+Consumer side (each interested context) — the Kafka consumer flow:
   A's integration event
     ▼
   <B>EventConsumer  (B infrastructure.adapter.in.messaging.kafka)
     ├─ unwrap CloudEvent, idempotency check
     └─ map fact → local command  (B's vocabulary)
          ▼
-      B command handler [tx]  → mutates B's own aggregate  (continues as adapter-flow #1)
+      B command handler [tx]  → mutates B's own aggregate  (continues as the command write flow)
 ```
 
-This is the transactional-outbox publication (adapter-flow #7) on the producer side and the inbound-event flow (adapter-flow #3) on the consumer side, applied across a context boundary. Delivery is at-least-once, so a consumer deduplicates by the CloudEvent id and its reaction is idempotent. A consumer that fails to process an event is handled by broker redelivery or a dead-letter topic; the initiator, having already committed, is unaffected.
+This is the transactional-outbox publication flow on the producer side and the Kafka consumer flow on the consumer side, applied across a context boundary. Delivery is at-least-once, so a consumer deduplicates by the CloudEvent id and its reaction is idempotent. A consumer that fails to process an event is handled by broker redelivery or a dead-letter topic; the initiator, having already committed, is unaffected.
 
 **Design decisions**
 
@@ -181,7 +181,7 @@ Compensation path (each participant reacts to the failure fact):
     Order     (reacts): [tx] reject order
 ```
 
-Each reaction is adapter-flow #3 → #1 → #7: consume a fact, map it to a local command, mutate the own aggregate, emit the next fact. No orchestrator, no cross-context command, no new machinery. The trade-off is that the process definition is distributed across participants' subscriptions — no single place shows the whole flow or its state, and the compensation logic is spread across the participants.
+Each reaction is Kafka consumer → command write → transactional outbox: consume a fact, map it to a local command, mutate the own aggregate, emit the next fact. No orchestrator, no cross-context command, no new machinery. The trade-off is that the process definition is distributed across participants' subscriptions — no single place shows the whole flow or its state, and the compensation logic is spread across the participants.
 
 ### Orchestration
 
@@ -196,11 +196,11 @@ Initiator (context that owns the process) — starts the saga in its own write:
     └─ emit "Step 1 command" → outbox  (same tx)
     ▼ commit
 
-Participant P1  (adapter-flow #3 → #1):
+Participant P1  (Kafka consumer → command write):
   receive "Step 1 command" → map to local command → P1 handler [tx] mutates P1's aggregate
     └─ emit "Step 1 succeeded"  (or "Step 1 failed") → outbox
 
-Process manager  (consumes outcomes, advances state — adapter-flow #3 → #1 over saga state):
+Process manager  (consumes outcomes, advances state — Kafka consumer → command write over saga state):
   on "Step 1 succeeded":   state = STEP1_DONE;    emit "Step 2 command"
   on "Step 2 succeeded":   state = COMPLETED
   on "Step 2 failed":      state = COMPENSATING;  emit "Compensate Step 1 command"

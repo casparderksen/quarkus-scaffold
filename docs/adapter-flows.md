@@ -12,9 +12,9 @@ Notation:
 
 ## Inbound adapters
 
-### 1. REST command (write)
+### 1. Command (write)
 
-Synchronous write entrypoint. The REST adapter validates the wire shape, translates to an application command, and invokes a single command handler. The handler owns the transaction, loads or creates exactly one aggregate, persists it, and emits domain events through the outbox. Mapping to the response DTO happens inside the transaction so no managed entity or lazy proxy leaves the application layer.
+Synchronous write path. Any inbound adapter can drive it — a REST resource, a Kafka consumer (flow #3), or a scheduler (flow #4) — each validating its own wire shape, translating to an application command, and invoking a single command handler. The handler owns the transaction, loads or creates exactly one aggregate, persists it, and emits domain events through the outbox. Mapping to the response DTO happens inside the transaction so no managed entity or lazy proxy leaves the application layer. The diagram shows the REST entrypoint; the Kafka and scheduler entrypoints reuse the same handler from `<Verb><Noun>Handler` down.
 
 ```
 HTTP POST /<resource>
