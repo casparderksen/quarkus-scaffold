@@ -33,4 +33,4 @@ protects the consumer from a foreign model.
 
 [Published Language](published-language.md), [Context Map](context-map.md),
 [Distributed Monolith](distributed-monolith.md),
-[Modular Monolith](modular-monolith.md).
+[Modulith](modulith.md).

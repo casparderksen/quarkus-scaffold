@@ -58,7 +58,7 @@ The concepts this project's architecture, design, and testing rest on.
 - [Entity](glossary/entity.md)
 - [Factory (Domain Factory)](glossary/domain-factory.md)
 - [Invariant](glossary/invariant.md)
-- [Modular Monolith](glossary/modular-monolith.md)
+- [Modulith](glossary/modulith.md)
 - [Open-Host Service (OHS)](glossary/open-host-service.md)
 - [Policy](glossary/policy.md)
 - [Published Language](glossary/published-language.md)

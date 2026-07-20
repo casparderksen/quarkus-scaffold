@@ -1,7 +1,8 @@
-# Modular Monolith
+# Modulith
 
-A modular monolith is a single deployable unit composed of independently
-designed modules — bounded contexts — separated by explicit boundaries.
+A modulith — also called a *modular monolith* — is a single deployable unit
+composed of independently designed modules — bounded contexts — separated by
+explicit boundaries.
 
 ## Why
 
@@ -13,7 +14,7 @@ into its own service when there is a reason to pay that cost.
 ## Contrast
 
 [Microservices](microservices.md) separate modules into independently
-deployable services; a modular monolith keeps them in one deployment.
+deployable services; a modulith keeps them in one deployment.
 
 ## See also
 

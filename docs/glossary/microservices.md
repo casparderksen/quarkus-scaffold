@@ -12,11 +12,11 @@ must be worth paying.
 
 ## Contrast
 
-A [modular monolith](modular-monolith.md) separates modules by clear
+A [modulith](modulith.md) separates modules by clear
 boundaries without deploying them separately; a
 [distributed monolith](distributed-monolith.md) pays the operational cost of
 microservices while keeping the coupling of a monolith.
 
 ## See also
 
-[Modular Monolith](modular-monolith.md), [Distributed Monolith](distributed-monolith.md).
+[Modulith](modulith.md), [Distributed Monolith](distributed-monolith.md).
