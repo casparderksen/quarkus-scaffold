@@ -149,6 +149,7 @@ The concepts this project's architecture, design, and testing rest on.
 - [At-least-once Delivery](glossary/at-least-once-delivery.md)
 - [Backward Compatibility](glossary/backward-compatibility.md)
 - [Business-key Idempotency](glossary/business-key-idempotency.md)
+- [Channel](glossary/channel.md)
 - [Choreography](glossary/choreography.md)
 - [CloudEvents](glossary/cloudevents.md)
 - [Compensating Transaction](glossary/compensating-transaction.md)

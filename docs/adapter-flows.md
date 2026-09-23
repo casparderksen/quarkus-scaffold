@@ -14,7 +14,7 @@ Notation:
 
 ### 1. Command (write)
 
-Synchronous write path. Any inbound adapter can drive it — a REST resource, a Kafka consumer (flow #3), or a scheduler (flow #4) — each validating its own wire shape, translating to an application command, and invoking a single command handler. The handler owns the transaction, loads or creates exactly one aggregate, persists it, and emits domain events through the outbox. Mapping to the response DTO happens inside the transaction so no managed entity or lazy proxy leaves the application layer. The diagram shows the REST entrypoint; the Kafka and scheduler entrypoints reuse the same handler from `<Verb><Noun>Handler` down.
+Synchronous write path. Any inbound adapter can drive it — a REST resource, an event consumer (flow #3), or a scheduler (flow #4) — each validating its own wire shape, translating to an application command, and invoking a single command handler. The handler owns the transaction, loads or creates exactly one aggregate, persists it, and emits domain events through the outbox. Mapping to the response DTO happens inside the transaction so no managed entity or lazy proxy leaves the application layer. The diagram shows the REST entrypoint; the messaging and scheduler entrypoints reuse the same handler from `<Verb><Noun>Handler` down.
 
 ```
 HTTP POST /<resource>
@@ -82,14 +82,16 @@ HTTP GET /<resource>?filter=...
 <X>Resource returns 200 + response DTO (no aggregate hydrated)
 ```
 
-### 3. Kafka consumer (inbound integration event)
+### 3. Event consumer (inbound integration event)
 
 Asynchronous write entrypoint driven by external integration events. The consumer unwraps the CloudEvent, validates payload, checks idempotency (delivery is at-least-once), translates external vocabulary to a local command, and invokes the same command handler the REST adapter would call. The consumer never executes domain logic itself — it is an entrypoint, identical in role to a REST resource.
 
+The consumer binds to a [channel](glossary/channel.md) via `@Incoming("<channel>")` and imports no broker type. The connector and the topic behind that channel are configuration (`mp.messaging.incoming.<channel>.*`), so the same class runs against Kafka in production and the in-memory connector in tests. It is named after the event, not the topic.
+
 ```
-Kafka record on subscribed topic
+Message on subscribed channel (connector-mapped to a Kafka topic)
   ▼
-<X>EventConsumer (infrastructure.adapter.in.messaging.kafka)
+<X>EventConsumer (infrastructure.adapter.in.messaging)
   ├─ CloudEvents binding extract → CloudEvent envelope
   │     (shared.infrastructure.adapter.out.messaging.cloudevents helpers)
   ├─ schema validate payload against dataschema
@@ -100,17 +102,18 @@ Kafka record on subscribed topic
        ▼
    (continues as flow #1 — aggregate mutation, outbox append, ack)
   ▼
-Kafka offset committed only after handler returns successfully
+Offset/acknowledgement committed only after handler returns successfully
 
 Failure branch:
   Transient failure (infra, optimistic lock) → throw → broker redelivery + backoff
   Non-retryable (DomainException, schema mismatch, mapping failure)
-    → publish to DLQ topic + commit offset (no infinite redelivery loop)
+    → dead-letter + acknowledge (no infinite redelivery loop);
+      configured, not coded: mp.messaging.incoming.<channel>.failure-strategy
 ```
 
 ### 4. Scheduler
 
-Time-driven inbound adapter. The job class extracts arguments (time window, batch size, page cursor) from configuration or a clock abstraction and invokes a single command or query handler. Domain logic, transactions, and direct repository access stay out of the job class — it is purely an entrypoint, like REST or Kafka. Time is injected (fixed clock in tests) so jobs remain deterministic.
+Time-driven inbound adapter. The job class extracts arguments (time window, batch size, page cursor) from configuration or a clock abstraction and invokes a single command or query handler. Domain logic, transactions, and direct repository access stay out of the job class — it is purely an entrypoint, like REST or messaging. Time is injected (fixed clock in tests) so jobs remain deterministic.
 
 ```
 Quarkus @Scheduled trigger
@@ -160,7 +163,7 @@ Projection DTO returned to handler — no aggregate hydrated, no lazy proxies
 
 ### 7. Domain event publication via transactional outbox
 
-The application layer publishes domain events through a single outbound port. The adapter side is split into a generic outbox-writing component and per-context translators that map domain event → versioned integration event. The Kafka producer itself runs out-of-band in Phase B and has no knowledge of domain types.
+The application layer publishes domain events through a single outbound port. The adapter side is split into a generic outbox-writing component and per-context translators that map domain event → versioned integration event. The broker send itself runs out-of-band in Phase B, inside the generic outbox publisher, and has no knowledge of domain types.
 
 ```
 Phase A — capture (in originating tx):
@@ -173,7 +176,7 @@ Phase A — capture (in originating tx):
         (shared.infrastructure.adapter.out.messaging.outbox)
         For each domain event:
           ├─ resolve per-context DomainEventTranslator<E>
-          │     (infrastructure.adapter.out.messaging.kafka, per bounded context)
+          │     (infrastructure.adapter.out.messaging.mapper, per bounded context)
           │     → IntegrationEvent (type=<...>.vN, dataschema URL)
           ├─ CloudEvents wrap: id, source, time, traceparent, dataschema
           │     (shared.infrastructure.adapter.out.messaging.cloudevents)
@@ -195,7 +198,9 @@ Phase B — dispatch [async, no domain knowledge]:
          LIMIT <batch>
     ▼
   OutboxEventPublisher (shared.infrastructure.adapter.out.messaging.outbox)
-    └─ KafkaProducer.send(topic, key=aggregate_id, payload=payload_bytes)
+    └─ send(topic, key=aggregate_id, payload=payload_bytes)
+       (the one place that touches the broker; any Kafka-typed wiring it
+        needs lives in shared.infrastructure.adapter.out.messaging.kafka)
        (key drives partition assignment, so same aggregate → same partition
         → ordering preserved through the broker)
     ▼

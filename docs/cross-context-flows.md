@@ -77,7 +77,7 @@ Each source context is upstream and the reporting context downstream: each sourc
 ```
 Feed (asynchronous, continuous — one subscription per source context):
   Context A integration event ─┐
-  Context B integration event ─┼─▶ <Report>EventConsumer  (infrastructure.adapter.in.messaging.kafka)
+  Context B integration event ─┼─▶ <Report>EventConsumer  (infrastructure.adapter.in.messaging)
   Context C integration event ─┘        └─ map event → Update<Report>ProjectionCommand
                                              ▼
                                           projection command handler [tx]
@@ -124,17 +124,17 @@ Producer side (initiating context) — within its own write, the command write f
     ▼ commit: aggregate row + outbox row, atomically
   (the outbox poller dispatches later — transactional outbox Phase B)
 
-Consumer side (each interested context) — the Kafka consumer flow:
+Consumer side (each interested context) — the event consumer flow:
   A's integration event
     ▼
-  <B>EventConsumer  (B infrastructure.adapter.in.messaging.kafka)
+  <B>EventConsumer  (B infrastructure.adapter.in.messaging)
     ├─ unwrap CloudEvent, idempotency check
     └─ map fact → local command  (B's vocabulary)
          ▼
       B command handler [tx]  → mutates B's own aggregate  (continues as the command write flow)
 ```
 
-This is the transactional-outbox publication flow on the producer side and the Kafka consumer flow on the consumer side, applied across a context boundary. Delivery is at-least-once, so a consumer deduplicates by the CloudEvent id and its reaction is idempotent. A consumer that fails to process an event is handled by broker redelivery or a dead-letter topic; the initiator, having already committed, is unaffected.
+This is the transactional-outbox publication flow on the producer side and the event consumer flow on the consumer side, applied across a context boundary. Delivery is at-least-once, so a consumer deduplicates by the CloudEvent id and its reaction is idempotent. A consumer that fails to process an event is handled by broker redelivery or a dead-letter topic; the initiator, having already committed, is unaffected.
 
 **Design decisions**
 
@@ -181,7 +181,7 @@ Compensation path (each participant reacts to the failure fact):
     Order     (reacts): [tx] reject order
 ```
 
-Each reaction is Kafka consumer → command write → transactional outbox: consume a fact, map it to a local command, mutate the own aggregate, emit the next fact. No orchestrator, no cross-context command, no new machinery. The trade-off is that the process definition is distributed across participants' subscriptions — no single place shows the whole flow or its state, and the compensation logic is spread across the participants.
+Each reaction is event consumer → command write → transactional outbox: consume a fact, map it to a local command, mutate the own aggregate, emit the next fact. No orchestrator, no cross-context command, no new machinery. The trade-off is that the process definition is distributed across participants' subscriptions — no single place shows the whole flow or its state, and the compensation logic is spread across the participants.
 
 ### Orchestration
 
@@ -196,11 +196,11 @@ Initiator (context that owns the process) — starts the saga in its own write:
     └─ emit "Step 1 command" → outbox  (same tx)
     ▼ commit
 
-Participant P1  (Kafka consumer → command write):
+Participant P1  (event consumer → command write):
   receive "Step 1 command" → map to local command → P1 handler [tx] mutates P1's aggregate
     └─ emit "Step 1 succeeded"  (or "Step 1 failed") → outbox
 
-Process manager  (consumes outcomes, advances state — Kafka consumer → command write over saga state):
+Process manager  (consumes outcomes, advances state — event consumer → command write over saga state):
   on "Step 1 succeeded":   state = STEP1_DONE;    emit "Step 2 command"
   on "Step 2 succeeded":   state = COMPLETED
   on "Step 2 failed":      state = COMPENSATING;  emit "Compensate Step 1 command"

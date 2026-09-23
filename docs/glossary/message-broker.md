@@ -13,5 +13,6 @@ to build themselves.
 
 ## See also
 
-[Event Bus](event-bus.md), [Event-Driven Architecture](event-driven-architecture.md),
+[Channel](channel.md), [Event Bus](event-bus.md),
+[Event-Driven Architecture](event-driven-architecture.md),
 [At-least-once Delivery](at-least-once-delivery.md).

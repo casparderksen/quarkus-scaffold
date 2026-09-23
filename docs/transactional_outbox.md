@@ -69,7 +69,7 @@ The immediate dispatch and the sweeper must not both send a row: the immediate d
 
 ## Extraction
 
-The capture (Phase A), the outbox row, and the command handler are unchanged when a context is extracted to its own service. Only the relay's transport changes: the in-JVM dispatch (or the `AFTER_SUCCESS` publish) targets a Kafka producer instead of the co-deployed consumer, and the consumer becomes a Kafka consumer. Keep the relay behind an outbound port so the change is one adapter on each side. See [Extracting a Bounded Context to a Microservice](extracting-microservices.md).
+The capture (Phase A), the outbox row, and the command handler are unchanged when a context is extracted to its own service. Only the relay's transport changes: the in-JVM dispatch (or the `AFTER_SUCCESS` publish) targets the broker instead of the co-deployed consumer, and the consumer becomes an event consumer subscribed to a channel. Keep the relay behind an outbound port so the change is one adapter on each side. See [Extracting a Bounded Context to a Microservice](extracting-microservices.md).
 
 ## See also
 

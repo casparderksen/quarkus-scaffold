@@ -3,6 +3,9 @@
 A messaging adapter integrates asynchronous messaging, either producing
 messages for others or consuming messages the system reacts to.
 
+It binds to a [channel](channel.md), not to a broker: the transport is chosen
+in configuration, so the adapter itself carries no broker types.
+
 ## Why
 
 It isolates the broker, the envelope format, and the delivery semantics from
@@ -12,5 +15,5 @@ translates an incoming message into a capability invocation.
 
 ## See also
 
-[Message Broker](message-broker.md), [Integration Event](integration-event.md),
-[Outbound Adapter](outbound-adapter.md).
+[Channel](channel.md), [Message Broker](message-broker.md),
+[Integration Event](integration-event.md), [Outbound Adapter](outbound-adapter.md).

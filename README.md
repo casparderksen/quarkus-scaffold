@@ -15,7 +15,7 @@ Template for Quarkus applications.
 - Testing (integration): QuarkusTest + Testcontainers
 - Testing (contract): REST Assured + OpenAPI contract validation + Pact (bidirectional)
 - Testing (e2e): Black-box tests via REST Assured + Cucumber (BDD feature specs) + Playwright (if UI exists)
-- Messaging: Apache Kafka (via SmallRye Reactive Messaging)
+- Messaging: SmallRye Reactive Messaging (channel-bound adapters) with the Apache Kafka connector
 - Observability: Micrometer metrics, OpenTelemetry tracing, structured JSON logging, correlation IDs
 - API documentation: SmallRye OpenAPI (`/q/openapi`), Swagger UI (`/q/swagger-ui`)
 - Security: Quarkus Security (OIDC/OAuth2), JWT validation, RBAC/ABAC via policy layer
@@ -85,10 +85,9 @@ org.example
 │       │   │   │   ├── dto           # REST wire DTOs (request/response, transport-coupled)
 │       │   │   │   ├── mapper        # Wire DTO ↔ command/projection mapping
 │       │   │   │   └── error         # Problem Detail mapping + per-context catalog
-│       │   │   ├── messaging         # Inbound messaging implementations
+│       │   │   ├── messaging         # Inbound messaging implementations (channel-bound consumers)
 │       │   │   │   ├── event         # Inbound integration event DTOs (transport-neutral)
-│       │   │   │   ├── mapper        # Inbound event → Command mappers
-│       │   │   │   └── kafka         # Kafka consumers (event-driven outbound)
+│       │   │   │   └── mapper        # Inbound event → Command mappers
 │       │   │   └── scheduler         # Scheduled jobs (driving adapters)
 │       │   └── out                   # Outbound adapters (driven adapters)
 │       │       ├── persistence       # Database access implementations
@@ -96,8 +95,7 @@ org.example
 │       │       │   └── query         # Read-side optimized queries / projections
 │       │       ├── messaging         # Outbound messaging implementations
 │       │       │   ├── event         # Outbound integration event DTOs (transport-neutral)
-│       │       │   ├── mapper        # Domain event → outbound event mappers
-│       │       │   └── kafka         # Kafka producers (event-driven outbound)
+│       │       │   └── mapper        # Domain event → outbound event mappers
 │       │       └── client            # External service integrations (REST/gRPC/SOAP)
 │       └── config                    # Application configuration interfaces (ConfigMapping)
 │
@@ -117,7 +115,8 @@ org.example
         │   └── out                   # Outbound adapters (driven adapters)
         │       ├── messaging         # Messaging implementations
         │       │   ├── cloudevents   # CloudEvents envelope + binding
-        │       │   └── outbox        # Transactional outbox infrastructure
+        │       │   ├── outbox        # Transactional outbox infrastructure
+        │       │   └── kafka         # Kafka connector wiring (only broker-coupled code)
         │       ├── persistence       # Shared persistence infrastructure
         │       │   └── jpa           # JPA/Hibernate cross-cutting utilities
         │       │       └── converter # Generic JPA attribute converters (URI, etc.)
@@ -297,7 +296,9 @@ Domain events are emitted from aggregates and captured by the application layer.
 
 **Inbound integration events always map to commands.** The adapter unwraps the envelope, translates external vocabulary to a local command, and invokes a handler. The handler decides what (if anything) happens, loads the aggregate, mutates, and emits its own domain event. Projection updates go through a command handler the same way as state changes — keeping transaction boundary, idempotency, and audit trail consistent.
 
-**CloudEvents** is the envelope format for all messaging boundaries. The envelope, binding helpers, and SDK dependency live in `shared.infrastructure.adapter.out.messaging.cloudevents` and are reused by inbound Kafka consumers when unwrapping incoming events. The application and domain layers never import the CloudEvents SDK; they work with domain events and let the adapter wrap or unwrap them.
+**Messaging adapters bind to channels, not to brokers.** A consumer declares `@Incoming("<channel>")`; the channel is mapped to a connector and a topic in configuration (`mp.messaging.incoming.<channel>.connector`, `....topic`). Such a class imports no broker type, so swapping Kafka for another connector — or for the in-memory connector in tests — is a configuration change that moves no code. Channel names and topic names are configured independently and need not match, so consumers are named after the event they consume, never after a topic. The only package allowed to import `org.apache.kafka.*` or `io.smallrye.reactive.messaging.kafka.*` is `shared.infrastructure.adapter.out.messaging.kafka`, which holds serde wiring, rebalance listeners, (de)serialization failure handlers, and code-level offset handling. Anything expressible in `application.properties` — commit strategy, dead-letter-queue failure strategy, topic names — stays configuration. See [Channel](docs/glossary/channel.md).
+
+**CloudEvents** is the envelope format for all messaging boundaries. The envelope, binding helpers, and SDK dependency live in `shared.infrastructure.adapter.out.messaging.cloudevents` and are reused by inbound messaging consumers when unwrapping incoming events. The application and domain layers never import the CloudEvents SDK; they work with domain events and let the adapter wrap or unwrap them.
 
 ### Event versioning
 
@@ -432,12 +433,13 @@ Each test carries Javadoc explaining the rule, why it exists, common failure mod
 | REST Resource       | `infrastructure.adapter.in.rest`                        | `OrderResource`             |
 | REST Wire DTO       | `infrastructure.adapter.in.rest.dto`                    | `CreateOrderRequest`        |
 | REST Wire Mapper    | `infrastructure.adapter.in.rest.mapper`                 | `OrderRestMapper`           |
-| Kafka Consumer      | `infrastructure.adapter.in.messaging.kafka`             | `OrderEventConsumer`        |
+| Event Consumer      | `infrastructure.adapter.in.messaging`                   | `OrderShippedEventConsumer` |
 | Scheduler           | `infrastructure.adapter.in.scheduler`                   | `OrderReconciliationJob`    |
 | Persistence Adapter | `infrastructure.adapter.out.persistence.jpa`            | `OrderJpaRepositoryAdapter` |
 | Query Adapter       | `infrastructure.adapter.out.persistence.query`          | `OrderHistoryQueryAdapter`  |
-| Kafka Producer      | `infrastructure.adapter.out.messaging.kafka`            | `OrderEventProducer`        |
-| Outbox Publisher    | `infrastructure.adapter.out.messaging.outbox`           | `OutboxEventPublisher`      |
+| Event Translator    | `infrastructure.adapter.out.messaging.mapper`           | `OrderPlacedTranslator`     |
+| Outbox Publisher    | `shared.infrastructure.adapter.out.messaging.outbox`    | `OutboxEventPublisher`      |
+| Kafka Connector     | `shared.infrastructure.adapter.out.messaging.kafka`     | `KafkaRebalanceListener`    |
 | REST Client         | `infrastructure.adapter.out.client.rest`                | `PaymentServiceClient`      |
 | Cache Adapter       | `infrastructure.adapter.out.cache.redis`                | `OrderCacheRepository`      |
 
